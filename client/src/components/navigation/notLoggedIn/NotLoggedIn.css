@@ -1,0 +1,26 @@
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+:root {
+    --primary-background-color: #0A192F;
+    --secondary-background-color: #112240;
+    --primary-text-color: #FFFFFF;
+    --primary-button-color: #1F63E8;
+  }
+
+.MuiToolbar-root {
+    display: flex;
+    height: 5vh;
+    justify-content: space-between;
+    background-color: var(--secondary-background-color);
+  }
+
+  .MuiToolbar-root a {
+    color: var(--primary-text-color);
+    text-decoration: none;
+    padding: 40px;
+  }
