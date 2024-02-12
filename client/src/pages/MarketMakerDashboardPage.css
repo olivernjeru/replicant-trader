@@ -1,0 +1,35 @@
+:root {
+    --primary-background-color: #0A192F;
+    --secondary-background-color: #112240;
+    --primary-text-color: #FFFFFF;
+    --primary-button-color: #1F63E8;
+  }
+
+.MarketMakerDashboard {
+    height: 100vh;
+    background-color: var(--primary-background-color);
+}
+
+.top,
+.bottom {
+    display: flex;
+}
+
+.top {
+    margin: 0;
+    padding: 0;
+    height: 44vh;
+}
+
+.fit {
+    margin-top: 4%;
+}
+
+.MuiTable-root {
+    /* background-color: var(--secondary-background-color); */
+    color: var(--primary-text-color);
+}
+
+/* .MuiTableRow-root {
+    color: var(--primary-text-color);
+} */
