@@ -74,16 +74,6 @@ export default function ResetPassword() {
                             autoComplete="username"
                             autoFocus
                         />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="password"
-                            label="Password"
-                            type="password"
-                            id="password"
-                            autoComplete="current-password"
-                        />
                         <Grid container spacing={2}>
                             <Grid item xs={6}>
                                 <Button
@@ -94,7 +84,7 @@ export default function ResetPassword() {
                                     to="/login"
                                     sx={{ mt: 4, mb: 2 }}
                                 >
-                                    BACK TO LOGIN
+                                    BACK
                                 </Button>
                                 </Grid>
                                 <Grid item xs={6}>
