@@ -22,9 +22,6 @@ const defaultTheme = createTheme({
           '&:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: '#1F63E8', // Change border color on hover to white
           },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'white', // Change border color when focused to white
-          },
         },
       },
     },
@@ -85,11 +82,11 @@ export default function Register() {
               margin="normal"
               required
               fullWidth
-              name="email"
-              label="Email"
+              name="email-address"
+              label="Email Address"
               type="email"
-              id="email"
-              autoComplete="email"
+              id="email-address"
+              autoComplete="email-address"
             />
             <TextField
               margin="normal"

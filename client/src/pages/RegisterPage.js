@@ -1,6 +1,6 @@
 import React from 'react';
 import './RegisterPage.css';
-import MainLayout from '../layout/MainLayout';
+import MainLayout from '../layout/NotLoggedInMainLayout';
 import Register from '../components/register/Register';
 
 
