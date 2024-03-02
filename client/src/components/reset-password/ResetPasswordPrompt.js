@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import './ResetPassword.css'
+import './ResetPasswordPrompt.css'
 import { Link as RouterLink } from 'react-router-dom';
 
 const defaultTheme = createTheme({
@@ -65,11 +65,33 @@ export default function ResetPassword() {
                             margin="normal"
                             required
                             fullWidth
-                            id="username"
-                            label="Username"
-                            name="username"
-                            autoComplete="username"
+                            id="current-password"
+                            label="Current Password"
+                            name="password"
+                            autoComplete="password"
+                            type='password'
                             autoFocus
+
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="new-password"
+                            label="New Password"
+                            name="new-password"
+                            autoComplete="new-password"
+                            type='password'
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            fullWidth
+                            id="confirm-new-password"
+                            label="Confirm New Password"
+                            name="confirm-new-password"
+                            autoComplete="confirm-new-password"
+                            type='password'
                         />
                         <Grid container spacing={2}>
                             <Grid item xs={6}>
@@ -90,8 +112,6 @@ export default function ResetPassword() {
                                     size="large"
                                     variant="contained"
                                     fullWidth
-                                    component={RouterLink}
-                                    to="/reset-password-prompt"
                                     sx={{ mt: 4, mb: 2 }}
                                 >
                                     RESET

@@ -6,7 +6,9 @@ import reportWebVitals from './reportWebVitals';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import LogInPage from './pages/LogInPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import RegisterPage from './pages/RegisterPage'
+import ResetPasswordPromptPage from './pages/ResetPasswordPromptPage';
+import RegisterPage from './pages/RegisterPage';
+import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 
 const router = createBrowserRouter([
   {
@@ -22,8 +24,16 @@ const router = createBrowserRouter([
     element: <ResetPasswordPage />
   },
   {
+    path: "reset-password-prompt",
+    element: <ResetPasswordPromptPage />
+  },
+  {
     path: "register",
     element: <RegisterPage />
+  },
+  {
+    path: "mm-dashboard",
+    element: <MarketMakerDashboardPage />
   },
 ]);
 
