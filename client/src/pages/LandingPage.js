@@ -1,6 +1,6 @@
 import React from 'react';
 import './LandingPage.css';
-import MainLayout from '../layout/MainLayout';
+import MainLayout from '../layout/NotLoggedInMainLayout';
 
 
 

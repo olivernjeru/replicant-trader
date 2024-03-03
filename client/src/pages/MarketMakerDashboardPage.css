@@ -10,6 +10,10 @@
     background-color: var(--primary-background-color);
 }
 
+.LoggedInMainLayout {
+    height: 100vh;
+}
+
 .top,
 .bottom {
     display: flex;
@@ -24,12 +28,3 @@
 .fit {
     margin-top: 4%;
 }
-
-.MuiTable-root {
-    /* background-color: var(--secondary-background-color); */
-    color: var(--primary-text-color);
-}
-
-/* .MuiTableRow-root {
-    color: var(--primary-text-color);
-} */

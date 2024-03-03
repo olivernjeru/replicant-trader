@@ -22,7 +22,7 @@ const rows = [
 export default function FinancialInstrumentTracker() {
   return (
     <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+      <Table sx={{ minWidth: 650 }} size="big" aria-label="a dense table">
         <TableHead>
           <TableRow>
             <TableCell>1. EQUITY</TableCell>

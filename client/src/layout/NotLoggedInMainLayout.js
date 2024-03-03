@@ -1,9 +1,9 @@
 import React from 'react';
 import NotLoggedIn from '../components/navigation/notLoggedIn/NotLoggedIn';;
 
-export default function MainLayout({children}) {
+export default function NotLoggedInMainLayout({children}) {
     return (
-        <div className="MainLayout">
+        <div className="NotLoggedInMainLayout">
             <NotLoggedIn />
             <div>{children}</div>
         </div>
