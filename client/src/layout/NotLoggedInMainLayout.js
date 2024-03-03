@@ -1,5 +1,5 @@
 import React from 'react';
-import NotLoggedIn from '../components/navigation/notLoggedIn/NotLoggedIn';;
+import NotLoggedIn from '../components/navigationBars/notLoggedIn/NotLoggedIn';;
 
 export default function NotLoggedInMainLayout({children}) {
     return (
