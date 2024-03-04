@@ -55,7 +55,7 @@ export default function Chat() {
   };
 
   return (
-    <Container sx={{ bgcolor: "yellow", display: 'flex' }}>
+    <Container sx={{ display: 'flex' }}>
       <ThemeProvider theme={defaultTheme}>
         <Box>
           <TextField
