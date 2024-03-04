@@ -4,3 +4,7 @@
     --primary-text-color: #FFFFFF;
     --primary-button-color: #1F63E8;
   }
+
+  .MuiTable-root {
+    background-color: var(--primary-background-color);
+  }
