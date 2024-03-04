@@ -6,6 +6,14 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import { ButtonGroup } from '@mui/material/';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import './Quote.css';
 
 const defaultTheme = createTheme({
     components: {
@@ -26,6 +34,14 @@ const defaultTheme = createTheme({
         },
     },
 });
+
+function createData( client, security, volume, bid, offer, valid_for ) {
+    return { client, security, volume, bid, offer, valid_for };
+}
+
+const rows = [
+    createData('Jane Doe', 'TSLA', 4000, 211.20, 209.20, 120)
+];
 
 export default function Quote() {
     const handleSubmit = (event) => {
@@ -118,6 +134,37 @@ export default function Quote() {
                         <Button>Live Quotes</Button>
                         <Button>Old Quotes</Button>
                     </ButtonGroup>
+                    <TableContainer component={Paper}>
+                        <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>CLIENT</TableCell>
+                                    <TableCell align="left">SECURITY</TableCell>
+                                    <TableCell align="left">VOLUME</TableCell>
+                                    <TableCell align="left">BID</TableCell>
+                                    <TableCell align="left">OFFER</TableCell>
+                                    <TableCell align="left">VALID FOR</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {rows.map((row) => (
+                                    <TableRow
+                                        key={row.client}
+                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                    >
+                                        <TableCell component="th" scope="row">
+                                            {row.client}
+                                        </TableCell>
+                                        <TableCell align="left">{row.security}</TableCell>
+                                        <TableCell align="left">{row.volume}</TableCell>
+                                        <TableCell align="left">{row.bid}</TableCell>
+                                        <TableCell align="left">{row.offer}</TableCell>
+                                        <TableCell align="left">{row.valid_for}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
                 </Box>
             </Container>
         </ThemeProvider>
