@@ -17,14 +17,21 @@
 .top,
 .bottom {
     display: flex;
+    justify-content: space-between;
+    height: auto;
 }
 
 .top {
-    margin: 0;
-    padding: 0;
-    height: 44vh;
+    /* background-color: red; */
+    margin-top: 64px;
+    margin-bottom: 1%;
+}
+
+.bottom {
+    /* background-color: green; */
+    margin-top: 1%;
 }
 
 .fit {
-    margin-top: 4%;
+    /* margin-top: 4%; */
 }
