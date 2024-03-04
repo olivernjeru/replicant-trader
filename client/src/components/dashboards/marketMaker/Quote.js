@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
+import { ButtonGroup } from '@mui/material/';
 
 const defaultTheme = createTheme({
     components: {
@@ -31,10 +32,10 @@ export default function Quote() {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         console.log({
-          username: data.get('username'),
-          password: data.get('password'),
+            username: data.get('username'),
+            password: data.get('password'),
         });
-      };
+    };
 
     return (
         <ThemeProvider theme={defaultTheme}>
@@ -49,45 +50,45 @@ export default function Quote() {
                     }}
                 >
                     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-                    <Box sx={{display: 'flex'}}>
-                    <TextField
-                            margin="normal"
-                            required
-                            id="stock-ticker-input"
-                            label="TSLA"
-                            name="stock-ticker-input"
-                            autoComplete="stock-ticker-input"
-                            sx={{margin: 1}}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            id="bid"
-                            label="Bid"
-                            name="bid"
-                            autoComplete="bid"
-                            sx={{margin: 1}}
-                        />
-                    </Box>
-                    <Box sx={{display: 'flex'}}>
-                        <TextField
-                            margin="normal"
-                            required
-                            id="offer"
-                            label="Offer"
-                            name="offer"
-                            autoComplete="offer"
-                            sx={{margin: 1}}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            id="volume"
-                            label="Vol"
-                            name="volime"
-                            autoComplete="volume"
-                            sx={{margin: 1}}
-                        />
+                        <Box sx={{ display: 'flex' }}>
+                            <TextField
+                                margin="normal"
+                                required
+                                id="stock-ticker-input"
+                                label="TSLA"
+                                name="stock-ticker-input"
+                                autoComplete="stock-ticker-input"
+                                sx={{ margin: 1 }}
+                            />
+                            <TextField
+                                margin="normal"
+                                required
+                                id="bid"
+                                label="Bid"
+                                name="bid"
+                                autoComplete="bid"
+                                sx={{ margin: 1 }}
+                            />
+                        </Box>
+                        <Box sx={{ display: 'flex' }}>
+                            <TextField
+                                margin="normal"
+                                required
+                                id="offer"
+                                label="Offer"
+                                name="offer"
+                                autoComplete="offer"
+                                sx={{ margin: 1 }}
+                            />
+                            <TextField
+                                margin="normal"
+                                required
+                                id="volume"
+                                label="Vol"
+                                name="volime"
+                                autoComplete="volume"
+                                sx={{ margin: 1 }}
+                            />
                         </Box>
                         <TextField
                             margin="normal"
@@ -96,7 +97,7 @@ export default function Quote() {
                             label="Valid for"
                             name="valid-for"
                             autoComplete="valid-for"
-                            sx={{margin: 1}}
+                            sx={{ margin: 1 }}
                         />
 
                         <Button
@@ -108,6 +109,15 @@ export default function Quote() {
                             SEND QUOTE
                         </Button>
                     </Box>
+                    <ButtonGroup
+                        disableElevation
+                        fullWidth
+                        variant="contained"
+                        aria-label="Disabled button group"
+                    >
+                        <Button>Live Quotes</Button>
+                        <Button>Old Quotes</Button>
+                    </ButtonGroup>
                 </Box>
             </Container>
         </ThemeProvider>
