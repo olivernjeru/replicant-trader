@@ -8,8 +8,8 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import './FinancialInstrumentTracker.css';
 
-function createData(name, calories, fat, carbs, protein) {
-  return { name, calories, fat, carbs, protein };
+function createData(equity, bond, fx, commodity ) {
+  return { equity, bond, fx, commodity };
 }
 
 const rows = [
@@ -26,24 +26,23 @@ export default function FinancialInstrumentTracker() {
         <TableHead>
           <TableRow>
             <TableCell>1. EQUITY</TableCell>
-            <TableCell align="right">2. BOND</TableCell>
-            <TableCell align="right">3. FX</TableCell>
-            <TableCell align="right">4. COMMODITY</TableCell>
+            <TableCell align="center">2. BOND</TableCell>
+            <TableCell align="center">3. FX</TableCell>
+            <TableCell align="center">4. COMMODITY</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {rows.map((row) => (
             <TableRow
-              key={row.name}
+              key={row.equity}
               sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
             >
               <TableCell component="th" scope="row">
-                {row.name}
+                {row.equity}
               </TableCell>
-              <TableCell align="right">{row.calories}</TableCell>
-              <TableCell align="right">{row.fat}</TableCell>
-              <TableCell align="right">{row.carbs}</TableCell>
-              <TableCell align="right">{row.protein}</TableCell>
+              <TableCell align="center">{row.bond}</TableCell>
+              <TableCell align="center">{row.fx}</TableCell>
+              <TableCell align="center">{row.commodity}</TableCell>
             </TableRow>
           ))}
         </TableBody>
