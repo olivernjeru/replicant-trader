@@ -13,6 +13,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import styled from '@emotion/styled';
 import './Quote.css';
 
 const defaultTheme = createTheme({
@@ -52,6 +53,10 @@ export default function Quote() {
             password: data.get('password'),
         });
     };
+
+    const StyledTableCell = styled(TableCell)({
+        color: 'white', // Set text color to white
+      });
 
     return (
         <ThemeProvider theme={defaultTheme}>
@@ -138,12 +143,12 @@ export default function Quote() {
                         <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>CLIENT</TableCell>
-                                    <TableCell align="left">SECURITY</TableCell>
-                                    <TableCell align="left">VOLUME</TableCell>
-                                    <TableCell align="left">BID</TableCell>
-                                    <TableCell align="left">OFFER</TableCell>
-                                    <TableCell align="left">VALID FOR</TableCell>
+                                    <StyledTableCell>CLIENT</StyledTableCell>
+                                    <StyledTableCell align="left">SECURITY</StyledTableCell>
+                                    <StyledTableCell align="left">VOLUME</StyledTableCell>
+                                    <StyledTableCell align="left">BID</StyledTableCell>
+                                    <StyledTableCell align="left">OFFER</StyledTableCell>
+                                    <StyledTableCell align="left">VALID FOR</StyledTableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -152,14 +157,14 @@ export default function Quote() {
                                         key={row.client}
                                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                                     >
-                                        <TableCell component="th" scope="row">
+                                        <StyledTableCell component="th" scope="row">
                                             {row.client}
-                                        </TableCell>
-                                        <TableCell align="left">{row.security}</TableCell>
-                                        <TableCell align="left">{row.volume}</TableCell>
-                                        <TableCell align="left">{row.bid}</TableCell>
-                                        <TableCell align="left">{row.offer}</TableCell>
-                                        <TableCell align="left">{row.valid_for}</TableCell>
+                                        </StyledTableCell>
+                                        <StyledTableCell align="left">{row.security}</StyledTableCell>
+                                        <StyledTableCell align="left">{row.volume}</StyledTableCell>
+                                        <StyledTableCell align="left">{row.bid}</StyledTableCell>
+                                        <StyledTableCell align="left">{row.offer}</StyledTableCell>
+                                        <StyledTableCell align="left">{row.valid_for}</StyledTableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
