@@ -9,6 +9,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ResetPasswordPromptPage from './pages/ResetPasswordPromptPage';
 import RegisterPage from './pages/RegisterPage';
 import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
+import ClientDashboardPage from './pages/ClientDashboardPage';
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
   {
     path: "mm-dashboard",
     element: <MarketMakerDashboardPage />
+  },
+  {
+    path: "client",
+    element: <ClientDashboardPage />
   },
 ]);
 

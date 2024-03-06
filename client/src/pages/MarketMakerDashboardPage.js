@@ -5,14 +5,11 @@ import FinancialInstrumentTracker from '../components/dashboards/marketMaker/Fin
 import HistoricalPerformanceTracker from '../components/dashboards/marketMaker/HistoricalPerformance';
 import Chat from '../components/dashboards/marketMaker/Chat';
 import Quote from '../components/dashboards/marketMaker/Quote';
-import { Box } from '@mui/material';
-import Divider from '@mui/material/Divider';
 
 export default function MarketMakerDashboardPage() {
     return (
         <div className="MarketMakerDashboard">
             <LoggedInMainLayout>
-                <Box>
                     <div className="top">
                         <div className="fit">
                             <FinancialInstrumentTracker />
@@ -21,7 +18,6 @@ export default function MarketMakerDashboardPage() {
                             <HistoricalPerformanceTracker />
                         </div>
                     </div>
-                    <Divider />
                     <div className="bottom">
                         <div className="chat">
                             <Chat />
@@ -30,7 +26,6 @@ export default function MarketMakerDashboardPage() {
                             <Quote />
                         </div>
                     </div>
-                </Box>
 
 
             </LoggedInMainLayout>
