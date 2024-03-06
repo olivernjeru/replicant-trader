@@ -12,9 +12,20 @@ import Logout from '@mui/icons-material/Logout';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import { Link } from '@mui/material';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../../firebase';
+import { useNavigate } from 'react-router-dom';
 import './LoggedIn.css';
 
 export default function LoggedIn() {
+  const navigate = useNavigate();
+
+  const signOut = () =>{
+    auth.signOut();
+    navigate('/')
+  }
+  const [user, loading, error] = useAuthState(auth);
+
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -90,16 +101,10 @@ export default function LoggedIn() {
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
           <MenuItem onClick={handleClose}>
-            <Avatar /> Profile
+            <Avatar /> {user?.email}
           </MenuItem>
           <Divider />
-          <MenuItem onClick={handleClose}>
-            <ListItemIcon>
-              <Settings fontSize="small" />
-            </ListItemIcon>
-            Settings
-          </MenuItem>
-          <MenuItem onClick={handleClose}>
+          <MenuItem onClick={()=>signOut()}>
             <ListItemIcon>
               <Logout fontSize="small" />
             </ListItemIcon>
