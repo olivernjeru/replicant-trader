@@ -7,7 +7,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import LogInPage from './pages/LogInPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ResetPasswordPromptPage from './pages/ResetPasswordPromptPage';
-import RegisterPage from './pages/RegisterPage';
+import SignUpPage from './pages/SignUpPage';
 import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 
@@ -29,8 +29,8 @@ const router = createBrowserRouter([
     element: <ResetPasswordPromptPage />
   },
   {
-    path: "register",
-    element: <RegisterPage />
+    path: "sign-up",
+    element: <SignUpPage />
   },
   {
     path: "mm-dashboard",
