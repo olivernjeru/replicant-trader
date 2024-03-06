@@ -35,13 +35,10 @@ const defaultTheme = createTheme({
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [tradingNo, setTradingNo] = useState('');
-  const [identificationNo, setIdentificationNo] = useState('');
-  const [username, setUsername] = useState('');
 
   const signUp = (event) => {
     event.preventDefault();
-    createUserWithEmailAndPassword(auth, email, password, tradingNo, identificationNo, username).then((userCredential) => { console.log(userCredential) }).catch((error) => { console.log(error); })
+    createUserWithEmailAndPassword(auth, email, password).then((userCredential) => { console.log(userCredential) }).catch((error) => { console.log(error); })
   };
 
   return (
@@ -73,8 +70,6 @@ export default function SignUp() {
               name="tradingNo"
               autoComplete="tradingNo"
               autoFocus
-              value={tradingNo}
-              onChange={(event) => setTradingNo(event.target.value)}
             />
             <TextField
               margin="normal"
@@ -84,8 +79,6 @@ export default function SignUp() {
               label="National ID No./Passport No."
               id="identificationNo."
               autoComplete="identification-number"
-              value={identificationNo}
-              onChange={(event) => setIdentificationNo(event.target.value)}
             />
             <TextField
               margin="normal"
@@ -107,8 +100,6 @@ export default function SignUp() {
               label="Username"
               id="username"
               autoComplete="username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
             />
             <TextField
               margin="normal"
