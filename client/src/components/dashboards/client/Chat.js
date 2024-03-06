@@ -81,7 +81,7 @@ export default function Chat() {
           <List>
           <ListItem disablePadding>
             <ListItemButton>
-              <ListItemText primary="Jane Doe" />
+              <ListItemText primary="George B" />
             </ListItemButton>
           </ListItem>
           </List>
@@ -97,8 +97,8 @@ export default function Chat() {
         >
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Avatar></Avatar>
-            <Typography variant="body1" gutterBottom sx={{ paddingLeft: '12%', paddingRight: '12%' }}>JANE DOE</Typography>
-            <Typography variant="body1" gutterBottom>543 789 8890</Typography>
+            <Typography variant="body1" gutterBottom sx={{ paddingLeft: '12%', paddingRight: '12%' }}>George B</Typography>
+            <Typography variant="body1" gutterBottom>321 789 8890</Typography>
           </Box>
           <Box sx={{ flexGrow: 1, p: 2 }}>
             {messages.map((message) => (

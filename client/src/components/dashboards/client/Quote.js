@@ -1,6 +1,5 @@
 import * as React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Container from '@mui/material/Container';
@@ -36,24 +35,15 @@ const defaultTheme = createTheme({
     },
 });
 
-function createData( client, security, volume, bid, offer, valid_for ) {
-    return { client, security, volume, bid, offer, valid_for };
+function createData(market_maker, security, volume, bid, offer, valid_for) {
+    return { market_maker, security, volume, bid, offer, valid_for };
 }
 
 const rows = [
-    createData('Jane Doe', 'TSLA', 4000, 211.20, 209.20, 120)
+    createData('George B', 'TSLA', 4000, 211.20, 209.20, 120)
 ];
 
 export default function Quote() {
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        console.log({
-            username: data.get('username'),
-            password: data.get('password'),
-        });
-    };
-
     const StyledTableCell = styled(TableCell)({
         color: 'white', // Set text color to white
     });
@@ -69,66 +59,6 @@ export default function Quote() {
                         alignItems: 'center',
                     }}
                 >
-                    <Box component="form" onSubmit={handleSubmit} noValidate >
-                        <Box sx={{ display: 'flex' }}>
-                            <TextField
-                                margin="normal"
-                                required
-                                id="stock-ticker-input"
-                                label="TSLA"
-                                name="stock-ticker-input"
-                                autoComplete="stock-ticker-input"
-                                sx={{ margin: 1 }}
-                            />
-                            <TextField
-                                margin="normal"
-                                required
-                                id="bid"
-                                label="Bid"
-                                name="bid"
-                                autoComplete="bid"
-                                sx={{ margin: 1 }}
-                            />
-                        </Box>
-                        <Box sx={{ display: 'flex' }}>
-                            <TextField
-                                margin="normal"
-                                required
-                                id="offer"
-                                label="Offer"
-                                name="offer"
-                                autoComplete="offer"
-                                sx={{ margin: 1 }}
-                            />
-                            <TextField
-                                margin="normal"
-                                required
-                                id="volume"
-                                label="Vol"
-                                name="volime"
-                                autoComplete="volume"
-                                sx={{ margin: 1 }}
-                            />
-                        </Box>
-                        <TextField
-                            margin="normal"
-                            required
-                            id="valid-for"
-                            label="Valid for"
-                            name="valid-for"
-                            autoComplete="valid-for"
-                            sx={{ margin: 1 }}
-                        />
-
-                        <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 0, mb: 1 }}
-                        >
-                            SEND QUOTE
-                        </Button>
-                    </Box>
                     <ButtonGroup
                         disableElevation
                         fullWidth
@@ -142,7 +72,7 @@ export default function Quote() {
                         <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
                             <TableHead>
                                 <TableRow>
-                                    <StyledTableCell>CLIENT</StyledTableCell>
+                                    <StyledTableCell>MARKET MAKER</StyledTableCell>
                                     <StyledTableCell align="left">SECURITY</StyledTableCell>
                                     <StyledTableCell align="left">VOLUME</StyledTableCell>
                                     <StyledTableCell align="left">BID</StyledTableCell>
@@ -157,12 +87,12 @@ export default function Quote() {
                                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                                     >
                                         <StyledTableCell component="th" scope="row">
-                                            {row.client}
+                                            {row.market_maker}
                                         </StyledTableCell>
                                         <StyledTableCell align="left">{row.security}</StyledTableCell>
                                         <StyledTableCell align="left">{row.volume}</StyledTableCell>
-                                        <StyledTableCell align="left">{row.bid}</StyledTableCell>
-                                        <StyledTableCell align="left">{row.offer}</StyledTableCell>
+                                        <StyledTableCell align="left"><Button>Sell{row.bid}</Button></StyledTableCell>
+                                        <StyledTableCell align="left"><Button>Buy{row.offer}</Button></StyledTableCell>
                                         <StyledTableCell align="left">{row.valid_for}</StyledTableCell>
                                     </TableRow>
                                 ))}
