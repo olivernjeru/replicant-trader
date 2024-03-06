@@ -36,7 +36,7 @@ const defaultTheme = createTheme({
     },
 });
 
-function createData( client, security, volume, bid, offer, valid_for ) {
+function createData(client, security, volume, bid, offer, valid_for) {
     return { client, security, volume, bid, offer, valid_for };
 }
 
@@ -56,7 +56,7 @@ export default function Quote() {
 
     const StyledTableCell = styled(TableCell)({
         color: 'white', // Set text color to white
-      });
+    });
 
     return (
         <ThemeProvider theme={defaultTheme}>
@@ -64,13 +64,12 @@ export default function Quote() {
                 <CssBaseline />
                 <Box
                     sx={{
-                        padding: 1,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                     }}
                 >
-                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+                    <Box component="form" onSubmit={handleSubmit} noValidate >
                         <Box sx={{ display: 'flex' }}>
                             <TextField
                                 margin="normal"
@@ -125,7 +124,7 @@ export default function Quote() {
                             type="submit"
                             fullWidth
                             variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
+                            sx={{ mt: 0, mb: 1 }}
                         >
                             SEND QUOTE
                         </Button>
