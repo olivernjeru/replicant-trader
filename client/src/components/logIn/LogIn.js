@@ -14,6 +14,7 @@ import './LogIn.css'
 import { useState } from 'react';
 import { auth } from '../../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
 const defaultTheme = createTheme({
   components: {
@@ -37,12 +38,15 @@ const defaultTheme = createTheme({
 
 
 export default function LogIn() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (event) => {
+  const logIn = (event) => {
     event.preventDefault();
-    signInWithEmailAndPassword(auth, email, password).then((userCredential) => { console.log(userCredential) }).catch((error) => { console.log(error); })
+    signInWithEmailAndPassword(auth, email, password)
+    .then((navigate('/mm-dashboard')))
+    .catch((error) => { console.log(error); })
     // const data = new FormData(event.currentTarget);
     // console.log({
     //   email: data.get('email'),
@@ -69,7 +73,7 @@ export default function LogIn() {
           <Typography component="h1" variant="h5">
             LOG IN
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+          <Box component="form" onSubmit={logIn} noValidate sx={{ mt: 2 }}>
             <TextField
               margin="normal"
               required
