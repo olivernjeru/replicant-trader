@@ -8,6 +8,7 @@ import LogInPage from './pages/LogInPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ResetPasswordPromptPage from './pages/ResetPasswordPromptPage';
 import SignUpPage from './pages/SignUpPage';
+import SubmitDetailsPage from './pages/SubmitDetailsPage';
 import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
   {
     path: "sign-up",
     element: <SignUpPage />
+  },
+  {
+    path: "submit-details",
+    element: <SubmitDetailsPage />
   },
   {
     path: "mm-dashboard",
