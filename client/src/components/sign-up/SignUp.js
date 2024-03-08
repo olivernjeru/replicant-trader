@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
@@ -10,6 +9,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
 import './SignUp.css'
+import { useNavigate } from 'react-router-dom';
 
 const defaultTheme = createTheme({
   components: {
@@ -33,12 +33,48 @@ const defaultTheme = createTheme({
 
 
 export default function SignUp() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const signUp = (event) => {
     event.preventDefault();
-    createUserWithEmailAndPassword(auth, email, password).then((userCredential) => { console.log(userCredential) }).catch((error) => { console.log(error); })
+    createUserWithEmailAndPassword(auth, email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      console.log(user);
+      navigate("/submit-details");
+     })
+    .catch((error) => {
+      const errorMessage = error.message;
+      const errorCode = error.code;
+
+      setError(true);
+
+      switch (errorCode) {
+        case "auth/weak-password":
+          setErrorMessage("The password is too weak.");
+          break;
+        case "auth/missing-password":
+          setErrorMessage("Please enter a password.");
+          break;
+        case "auth/email-already-in-use":
+          setErrorMessage(
+            "This email address is already in use by another account."
+          );
+          break;
+        case "auth/invalid-email":
+          setErrorMessage("This email address is invalid.");
+          break;
+        case "auth/operation-not-allowed":
+          setErrorMessage("Email/password accounts are not enabled.");
+          break;
+        default:
+          setErrorMessage(errorMessage);
+          break;
+      }})
   };
 
   return (
@@ -65,25 +101,6 @@ export default function SignUp() {
               margin="normal"
               required
               fullWidth
-              id="tradingNo"
-              label="Trading No."
-              name="tradingNo"
-              autoComplete="tradingNo"
-              autoFocus
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="identificationNo."
-              label="National ID No./Passport No."
-              id="identificationNo."
-              autoComplete="identification-number"
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
               name="email-address"
               label="Email Address"
               type="email"
@@ -91,15 +108,6 @@ export default function SignUp() {
               autoComplete="email-address"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="username"
-              label="Username"
-              id="username"
-              autoComplete="username"
             />
             <TextField
               margin="normal"
@@ -121,6 +129,7 @@ export default function SignUp() {
             >
               SUBMIT
             </Button>
+            {error && <p>{errorMessage}</p>}
           </Box>
         </Box>
       </Container>
