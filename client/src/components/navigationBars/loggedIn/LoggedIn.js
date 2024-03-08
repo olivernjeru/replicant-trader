@@ -54,7 +54,7 @@ export default function LoggedIn() {
             <IconButton
               onClick={handleClick}
               size="small"
-              sx={{ ml: 2 }}
+              sx={{ ml: -30 }}
               aria-controls={open ? 'account-menu' : undefined}
               aria-haspopup="true"
               aria-expanded={open ? 'true' : undefined}
