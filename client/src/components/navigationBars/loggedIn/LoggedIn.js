@@ -7,7 +7,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import Settings from '@mui/icons-material/Settings';
 import Logout from '@mui/icons-material/Logout';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -24,7 +23,7 @@ export default function LoggedIn() {
     auth.signOut();
     navigate('/')
   }
-  const [user, loading, error] = useAuthState(auth);
+  const [user] = useAuthState(auth);
 
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   useEffect(() => {
