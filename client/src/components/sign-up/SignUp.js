@@ -36,45 +36,51 @@ export default function SignUp() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const signUp = (event) => {
     event.preventDefault();
-    createUserWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      console.log(user);
-      navigate("/submit-details");
-     })
-    .catch((error) => {
-      const errorMessage = error.message;
-      const errorCode = error.code;
+    if (password === confirmPassword) {
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          console.log(user);
+          navigate("/submit-details");
+        })
+        .catch((error) => {
+          const errorMessage = error.message;
+          const errorCode = error.code;
 
-      setError(true);
+          setError(true);
 
-      switch (errorCode) {
-        case "auth/weak-password":
-          setErrorMessage("The password is too weak.");
-          break;
-        case "auth/missing-password":
-          setErrorMessage("Please enter a password.");
-          break;
-        case "auth/email-already-in-use":
-          setErrorMessage(
-            "This email address is already in use by another account."
-          );
-          break;
-        case "auth/invalid-email":
-          setErrorMessage("This email address is invalid.");
-          break;
-        case "auth/operation-not-allowed":
-          setErrorMessage("Email/password accounts are not enabled.");
-          break;
-        default:
-          setErrorMessage(errorMessage);
-          break;
-      }})
+          switch (errorCode) {
+            case "auth/weak-password":
+              setErrorMessage("The password is too weak.");
+              break;
+            case "auth/missing-password":
+              setErrorMessage("Please enter a password.");
+              break;
+            case "auth/email-already-in-use":
+              setErrorMessage(
+                "This email address is already in use by another account."
+              );
+              break;
+            case "auth/invalid-email":
+              setErrorMessage("This email address is invalid.");
+              break;
+            case "auth/operation-not-allowed":
+              setErrorMessage("Email/password accounts are not enabled.");
+              break;
+            default:
+              setErrorMessage(errorMessage);
+              break;
+          }
+        })
+    } else {
+      setErrorMessage("Passwords do not match!")
+    }
   };
 
   return (
@@ -117,9 +123,21 @@ export default function SignUp() {
               label="Password"
               type="password"
               id="password"
-              autoComplete="current-password"
+              autoComplete="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirm-password"
+              label="Confirm Password"
+              type="password"
+              id="confirm-password"
+              autoComplete="confirm-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
             />
             <Button
               type="submit"
