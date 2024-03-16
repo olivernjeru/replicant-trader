@@ -21,7 +21,7 @@ export default function LoggedIn() {
 
   const signOut = () =>{
     auth.signOut();
-    navigate('/')
+    navigate('/');
   }
   const [user] = useAuthState(auth);
 
