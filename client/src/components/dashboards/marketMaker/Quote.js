@@ -15,6 +15,7 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import styled from '@emotion/styled';
 import './Quote.css';
+import FloatingActionButtonZoom from './quoteTable';
 
 const defaultTheme = createTheme({
     components: {
@@ -129,46 +130,7 @@ export default function Quote() {
                             SEND QUOTE
                         </Button>
                     </Box>
-                    <ButtonGroup
-                        disableElevation
-                        fullWidth
-                        variant="contained"
-                        aria-label="Disabled button group"
-                    >
-                        <Button>Live Quotes</Button>
-                        <Button>Old Quotes</Button>
-                    </ButtonGroup>
-                    <TableContainer component={Paper}>
-                        <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
-                            <TableHead>
-                                <TableRow>
-                                    <StyledTableCell>CLIENT</StyledTableCell>
-                                    <StyledTableCell align="left">SECURITY</StyledTableCell>
-                                    <StyledTableCell align="left">VOLUME</StyledTableCell>
-                                    <StyledTableCell align="left">BID</StyledTableCell>
-                                    <StyledTableCell align="left">OFFER</StyledTableCell>
-                                    <StyledTableCell align="left">VALID FOR</StyledTableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.map((row) => (
-                                    <TableRow
-                                        key={row.client}
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                    >
-                                        <StyledTableCell component="th" scope="row">
-                                            {row.client}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="left">{row.security}</StyledTableCell>
-                                        <StyledTableCell align="left">{row.volume}</StyledTableCell>
-                                        <StyledTableCell align="left">{row.bid}</StyledTableCell>
-                                        <StyledTableCell align="left">{row.offer}</StyledTableCell>
-                                        <StyledTableCell align="left">{row.valid_for}</StyledTableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <FloatingActionButtonZoom />
                 </Box>
             </Container>
         </ThemeProvider>
