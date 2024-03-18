@@ -27,6 +27,11 @@
     margin-top: 1%;
 }
 
-.fit {
+.fit,
+.hp {
     margin-top: 1%;
+}
+
+.hp {
+    padding-right: 1.5%;
 }
