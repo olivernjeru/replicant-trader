@@ -8,6 +8,7 @@ import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import './submitDetails.css'
 import { useNavigate } from 'react-router-dom';
+import { getDatabase, ref, push } from "firebase/database";
 
 const defaultTheme = createTheme({
   components: {
@@ -31,49 +32,53 @@ const defaultTheme = createTheme({
 
 
 export default function SubmitDetails() {
-  // const navigate = useNavigate();
-  // const [tradingNo, setTradingNo] = useState('');
-  // const [identificationNo, setIdentificationNo] = useState('');
-  // const [username, setUsername] = useState('');
-  // const [error, setError] = useState(false);
-  // const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
+  const [tradingNo, setTradingNo] = useState('');
+  const [identificationNo, setIdentificationNo] = useState('');
+  const [username, setUsername] = useState('');
+  const [error, setError] = useState('');
+
+  const db = getDatabase();
 
   const submitDetails = (event) => {
-    // event.preventDefault();
-    // createUserWithEmailAndPassword(auth, email, password)
-    // .then((userCredential) => {
-    //   const user = userCredential.user;
-    //   console.log(user);
-    //   navigate("/login");
-    //  })
-    // .catch((error) => {
-    //   const errorMessage = error.message;
-    //   const errorCode = error.code;
+    event.preventDefault();
 
-    //   setError(true);
+    // Form validation
+    if (!tradingNo) {
+      setError('Enter your trading number.');
+      return;
+    }
+    else if (!identificationNo) {
+      setError('Enter your national identification number.');
+      return;
+    }
+    else if (!username) {
+      setError('Enter your username.');
+      return;
+    }
 
-    //   switch (errorCode) {
-    //     case "auth/weak-password":
-    //       setErrorMessage("The password is too weak.");
-    //       break;
-    //     case "auth/missing-password":
-    //       setErrorMessage("Please enter a password.");
-    //       break;
-    //     case "auth/email-already-in-use":
-    //       setErrorMessage(
-    //         "This email address is already in use by another account."
-    //       );
-    //       break;
-    //     case "auth/invalid-email":
-    //       setErrorMessage("This email address is invalid.");
-    //       break;
-    //     case "auth/operation-not-allowed":
-    //       setErrorMessage("Email/password accounts are not enabled.");
-    //       break;
-    //     default:
-    //       setErrorMessage(errorMessage);
-    //       break;
-    //   }})
+    // Clear previous error messages
+    setError('');
+
+    // Generate a unique timestamp representing the current time
+    const currentTime = new Date().getTime();
+
+    push(ref(db, `userDetails/${currentTime}`), {
+      tradingNo: tradingNo,
+      identificationNo: identificationNo,
+      userName: username,
+    })
+      .then(() => {
+        console.log('Data Saved Successfully');
+        navigate("/login");
+      })
+      .catch((error) => {
+        if (error.code === 'PERMISSION_DENIED') {
+          setError('Permission denied. Check your database rules.');
+        } else {
+          setError('An error occurred while saving data:', error.message);
+        }
+      })
   };
 
   return (
@@ -105,6 +110,8 @@ export default function SubmitDetails() {
               name="tradingNo"
               autoComplete="tradingNo"
               autoFocus
+              value={tradingNo}
+              onChange={(event) => setTradingNo(event.target.value)}
             />
             <TextField
               margin="normal"
@@ -114,6 +121,8 @@ export default function SubmitDetails() {
               label="National ID No./Passport No."
               id="identificationNo."
               autoComplete="identification-number"
+              value={identificationNo}
+              onChange={(event) => setIdentificationNo(event.target.value)}
             />
             <TextField
               margin="normal"
@@ -123,7 +132,11 @@ export default function SubmitDetails() {
               label="Username"
               id="username"
               autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
             />
+            {error && <Typography color="error" variant="body2">{error}</Typography>}
+
             <Button
               type="submit"
               fullWidth
