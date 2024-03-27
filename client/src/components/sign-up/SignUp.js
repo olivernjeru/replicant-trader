@@ -34,6 +34,10 @@ const defaultTheme = createTheme({
 
 export default function SignUp() {
   const navigate = useNavigate();
+
+  // Validate if username is a correct email address
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,6 +46,32 @@ export default function SignUp() {
 
   const signUp = (event) => {
     event.preventDefault();
+
+    // Form validation
+    if (!email) {
+      setError('Enter your email.');
+      return;
+    }
+    else if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    else if (!password) {
+      setError('Enter your password.');
+      return;
+    }
+    else if (!confirmPassword) {
+      setError('Enter the password again to confirm.');
+      return;
+    }
+    else if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    // Clear previous error messages
+    setError('');
+
     if (password === confirmPassword) {
       createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
@@ -78,8 +108,6 @@ export default function SignUp() {
               break;
           }
         })
-    } else {
-      setErrorMessage("Passwords do not match!")
     }
   };
 
@@ -139,6 +167,7 @@ export default function SignUp() {
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
             />
+            {error && <Typography color="error" variant="body2">{error}</Typography>}
             <Button
               type="submit"
               fullWidth
@@ -147,7 +176,6 @@ export default function SignUp() {
             >
               SUBMIT
             </Button>
-            {error && <p>{errorMessage}</p>}
           </Box>
         </Box>
       </Container>
