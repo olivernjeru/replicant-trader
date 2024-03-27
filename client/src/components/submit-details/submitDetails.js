@@ -136,7 +136,6 @@ export default function SubmitDetails() {
               onChange={(event) => setUsername(event.target.value)}
             />
             {error && <Typography color="error" variant="body2">{error}</Typography>}
-
             <Button
               type="submit"
               fullWidth
@@ -145,7 +144,6 @@ export default function SubmitDetails() {
             >
               SUBMIT
             </Button>
-            {/* {error && <p>{errorMessage}</p>} */}
           </Box>
         </Box>
       </Container>

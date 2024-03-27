@@ -41,17 +41,33 @@ export default function LogIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const logIn = (event) => {
     event.preventDefault();
+
+    // Form validation
+    if (!email) {
+      setError('Enter your email.');
+      return;
+    }
+    else if (!password) {
+      setError('Enter your password.');
+      return;
+    }
+
+    // Clear previous error messages
+    setError('');
+
     signInWithEmailAndPassword(auth, email, password)
-    .then((navigate('/mm-dashboard')))
-    .catch((error) => { console.log(error); })
-    // const data = new FormData(event.currentTarget);
-    // console.log({
-    //   email: data.get('email'),
-    //   password: data.get('password'),
-    // });
+      .then(() => {
+        console.log('Login Successful!');
+        navigate('/mm-dashboard')
+      })
+      .catch((error) => {
+        console.log(error);
+      })
+
   };
 
   return (
@@ -102,6 +118,7 @@ export default function LogIn() {
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
+            {error && <Typography color="error" variant="body2">{error}</Typography>}
             <Button
               type="submit"
               fullWidth
