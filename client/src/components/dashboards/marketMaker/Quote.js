@@ -1,21 +1,15 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
-import { ButtonGroup } from '@mui/material/';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import styled from '@emotion/styled';
 import './Quote.css';
-import FloatingActionButtonZoom from './quoteTable';
+import QuotesTable from './QuotesTable';
+import { useNavigate } from 'react-router-dom';
+import { getDatabase, ref, push } from "firebase/database";
 
 const defaultTheme = createTheme({
     components: {
@@ -37,27 +31,66 @@ const defaultTheme = createTheme({
     },
 });
 
-function createData( client, security, volume, bid, offer, valid_for ) {
-    return { client, security, volume, bid, offer, valid_for };
-}
-
-const rows = [
-    createData('Jane Doe', 'TSLA', 4000, 211.20, 209.20, 120)
-];
-
 export default function Quote() {
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        console.log({
-            username: data.get('username'),
-            password: data.get('password'),
-        });
-    };
+    const navigate = useNavigate();
+    const [stockTicker, setStockTicker] = useState('');
+    const [bid, setBid] = useState('');
+    const [offer, setOffer] = useState('');
+    const [volume, setVolume] = useState('');
+    const [validFor, setValidFor] = useState('');
+    const [error, setError] = useState('');
 
-    const StyledTableCell = styled(TableCell)({
-        color: 'white', // Set text color to white
-    });
+    const db = getDatabase();
+
+    const sendQuote = (event) => {
+        event.preventDefault();
+
+        // Form validation
+        if (!stockTicker) {
+            setError('Enter Stock Ticker.');
+            return;
+        }
+        else if (!bid) {
+            setError('Enter Bid.');
+            return;
+        }
+        else if (!offer) {
+            setError('Enter Offer.');
+            return;
+        }
+        else if (!volume) {
+            setError('Enter Volume.');
+            return;
+        }
+        else if (!validFor) {
+            setError('Enter Quote Validity.');
+            return;
+        }
+
+        // Clear previous error messages
+        setError('');
+
+        // Generate a unique timestamp representing the current time
+        const currentTime = new Date().getTime();
+
+        push(ref(db, `quotes/${currentTime}`), {
+            stockTicker: stockTicker,
+            bid: bid,
+            offer: offer,
+            volume: volume,
+            validFor: validFor,
+        })
+            .then(() => {
+                console.log('Data Saved Successfully');
+            })
+            .catch((error) => {
+                if (error.code === 'PERMISSION_DENIED') {
+                    setError('Permission denied. Check your database rules.');
+                } else {
+                    setError('An error occurred while saving data:', error.message);
+                }
+            })
+    };
 
     return (
         <ThemeProvider theme={defaultTheme}>
@@ -70,7 +103,7 @@ export default function Quote() {
                         alignItems: 'center',
                     }}
                 >
-                    <Box component="form" onSubmit={handleSubmit} noValidate >
+                    <Box component="form" onSubmit={sendQuote} noValidate >
                         <Box sx={{ display: 'flex' }}>
                             <TextField
                                 margin="normal"
@@ -80,6 +113,8 @@ export default function Quote() {
                                 name="stock-ticker-input"
                                 autoComplete="stock-ticker-input"
                                 sx={{ margin: 1 }}
+                                value={stockTicker}
+                                onChange={(event) => setStockTicker(event.target.value)}
                             />
                             <TextField
                                 margin="normal"
@@ -89,6 +124,8 @@ export default function Quote() {
                                 name="bid"
                                 autoComplete="bid"
                                 sx={{ margin: 1 }}
+                                value={bid}
+                                onChange={(event) => setBid(event.target.value)}
                             />
                         </Box>
                         <Box sx={{ display: 'flex' }}>
@@ -100,6 +137,8 @@ export default function Quote() {
                                 name="offer"
                                 autoComplete="offer"
                                 sx={{ margin: 1 }}
+                                value={offer}
+                                onChange={(event) => setOffer(event.target.value)}
                             />
                             <TextField
                                 margin="normal"
@@ -109,6 +148,8 @@ export default function Quote() {
                                 name="volime"
                                 autoComplete="volume"
                                 sx={{ margin: 1 }}
+                                value={volume}
+                                onChange={(event) => setVolume(event.target.value)}
                             />
                         </Box>
                         <TextField
@@ -119,8 +160,10 @@ export default function Quote() {
                             name="valid-for"
                             autoComplete="valid-for"
                             sx={{ margin: 1 }}
+                            value={validFor}
+                            onChange={(event) => setValidFor(event.target.value)}
                         />
-
+                        {error && <Typography color="error" variant="body2">{error}</Typography>}
                         <Button
                             type="submit"
                             fullWidth
@@ -130,7 +173,7 @@ export default function Quote() {
                             SEND QUOTE
                         </Button>
                     </Box>
-                    <FloatingActionButtonZoom />
+                    <QuotesTable />
                 </Box>
             </Container>
         </ThemeProvider>
