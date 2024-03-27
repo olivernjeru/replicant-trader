@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
@@ -9,7 +9,7 @@ import Button from '@mui/material/Button';
 import './Quote.css';
 import QuotesTable from './QuotesTable';
 import { useNavigate } from 'react-router-dom';
-import { getDatabase, ref, push } from "firebase/database";
+import { getDatabase, ref, push, onValue } from "firebase/database";
 
 const defaultTheme = createTheme({
     components: {
@@ -31,7 +31,65 @@ const defaultTheme = createTheme({
     },
 });
 
+function createData(client, security, volume, bid, offer, valid_for) {
+    return { client, security, volume, bid, offer, valid_for };
+}
+
+const fetchDataFromDatabase = async () => {
+    const db = getDatabase();
+    const quotesRef = ref(db, 'quotes');
+
+    // Initialize an empty array to store fetched data
+    let fetchedData = [];
+
+    try {
+        // Attach an asynchronous callback to read the data at the quotes reference
+        onValue(quotesRef, (snapshot) => {
+            // Check if there's any data
+            if (snapshot.exists()) {
+                // Iterate through the fetched data
+                snapshot.forEach((childSnapshot) => {
+                    const quoteData = childSnapshot.val();
+                    const { bid, offer, stockTicker, validFor, volume } = quoteData;
+
+                    // Push the fetched data into the array
+                    fetchedData.push(createData( bid, offer, stockTicker, validFor, volume ));
+                });
+            }
+        }, (error) => {
+            console.error('Error fetching data from database:', error);
+        });
+    } catch (error) {
+        console.error('Error fetching data from database:', error);
+    }
+
+    return fetchedData;
+};
+
 export default function Quote() {
+    // Define state to hold the fetched quotes data
+    const [quotesData, setQuotesData] = useState([]);
+
+    // Fetch quotes data from the database
+    useEffect(() => {
+        // Assuming you have a function to fetch data from the database
+        // Replace `fetchQuotesData` with your actual function
+        const fetchQuotesData = async () => {
+            try {
+                // Fetch data from the database
+                const data = await fetchDataFromDatabase();
+
+                // Set the fetched data to state
+                setQuotesData(data);
+            } catch (error) {
+                console.error('Error fetching quotes data:', error);
+            }
+        };
+
+        // Call the fetchQuotesData function
+        fetchQuotesData();
+    }, []);
+
     const navigate = useNavigate();
     const [stockTicker, setStockTicker] = useState('');
     const [bid, setBid] = useState('');
@@ -173,7 +231,7 @@ export default function Quote() {
                             SEND QUOTE
                         </Button>
                     </Box>
-                    <QuotesTable />
+                    <QuotesTable quotesData={quotesData}/>
                 </Box>
             </Container>
         </ThemeProvider>

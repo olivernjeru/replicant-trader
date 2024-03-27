@@ -46,21 +46,15 @@ function a11yProps(index) {
     };
 }
 
-const fabStyle = {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
-};
-
-function createData(client, security, volume, bid, offer, valid_for) {
-    return { client, security, volume, bid, offer, valid_for };
+function createData(bid, offer, stockTicker, validFor, volume) {
+    return { bid, offer, stockTicker, validFor, volume };
 }
 
 const rows = [
     createData('Jane Doe', 'TSLA', 4000, 211.20, 209.20, 120)
 ];
 
-export default function QuotesTable() {
+export default function QuotesTable({ quotesData }) {
     const theme = useTheme();
     const [value, setValue] = React.useState(0);
 
@@ -117,7 +111,7 @@ export default function QuotesTable() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {rows.map((row) => (
+                                {quotesData.map((row) => (
                                     <TableRow
                                         key={row.client}
                                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
@@ -150,7 +144,7 @@ export default function QuotesTable() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {rows.map((row) => (
+                                {quotesData.map((row) => (
                                     <TableRow
                                         key={row.client}
                                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
