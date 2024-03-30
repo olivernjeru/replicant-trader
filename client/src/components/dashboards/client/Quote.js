@@ -1,7 +1,6 @@
 import * as React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import { ButtonGroup } from '@mui/material/';
@@ -14,26 +13,6 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import styled from '@emotion/styled';
 import './Quote.css';
-
-const defaultTheme = createTheme({
-    components: {
-        MuiTextField: {
-            styleOverrides: {
-                root: {
-                    '& .MuiInputLabel-root, & .MuiOutlinedInput-input': {
-                        color: 'white', // Change text color to white
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'white', // Change border color to white
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#1F63E8', // Change border color on hover to white
-                    },
-                },
-            },
-        },
-    },
-});
 
 function createData(market_maker, security, volume, bid, offer, valid_for) {
     return { market_maker, security, volume, bid, offer, valid_for };
@@ -49,58 +28,56 @@ export default function Quote() {
     });
 
     return (
-        <ThemeProvider theme={defaultTheme}>
-            <Container component="main" maxWidth="sm">
-                <CssBaseline />
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                    }}
+        <Container component="main" maxWidth="sm">
+            <CssBaseline />
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}
+            >
+                <ButtonGroup
+                    disableElevation
+                    fullWidth
+                    variant="contained"
+                    aria-label="Disabled button group"
                 >
-                    <ButtonGroup
-                        disableElevation
-                        fullWidth
-                        variant="contained"
-                        aria-label="Disabled button group"
-                    >
-                        <Button>Live Quotes</Button>
-                        <Button>Old Quotes</Button>
-                    </ButtonGroup>
-                    <TableContainer component={Paper}>
-                        <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
-                            <TableHead>
-                                <TableRow>
-                                    <StyledTableCell>MARKET MAKER</StyledTableCell>
-                                    <StyledTableCell align="left">SECURITY</StyledTableCell>
-                                    <StyledTableCell align="left">VOLUME</StyledTableCell>
-                                    <StyledTableCell align="left">BID</StyledTableCell>
-                                    <StyledTableCell align="left">OFFER</StyledTableCell>
-                                    <StyledTableCell align="left">VALID FOR</StyledTableCell>
+                    <Button>Live Quotes</Button>
+                    <Button>Old Quotes</Button>
+                </ButtonGroup>
+                <TableContainer component={Paper}>
+                    <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
+                        <TableHead>
+                            <TableRow>
+                                <StyledTableCell>MARKET MAKER</StyledTableCell>
+                                <StyledTableCell align="left">SECURITY</StyledTableCell>
+                                <StyledTableCell align="left">VOLUME</StyledTableCell>
+                                <StyledTableCell align="left">BID</StyledTableCell>
+                                <StyledTableCell align="left">OFFER</StyledTableCell>
+                                <StyledTableCell align="left">VALID FOR</StyledTableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {rows.map((row) => (
+                                <TableRow
+                                    key={row.client}
+                                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                >
+                                    <StyledTableCell component="th" scope="row">
+                                        {row.market_maker}
+                                    </StyledTableCell>
+                                    <StyledTableCell align="left">{row.security}</StyledTableCell>
+                                    <StyledTableCell align="left">{row.volume}</StyledTableCell>
+                                    <StyledTableCell align="left"><Button>Sell{row.bid}</Button></StyledTableCell>
+                                    <StyledTableCell align="left"><Button>Buy{row.offer}</Button></StyledTableCell>
+                                    <StyledTableCell align="left">{row.valid_for}</StyledTableCell>
                                 </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {rows.map((row) => (
-                                    <TableRow
-                                        key={row.client}
-                                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                                    >
-                                        <StyledTableCell component="th" scope="row">
-                                            {row.market_maker}
-                                        </StyledTableCell>
-                                        <StyledTableCell align="left">{row.security}</StyledTableCell>
-                                        <StyledTableCell align="left">{row.volume}</StyledTableCell>
-                                        <StyledTableCell align="left"><Button>Sell{row.bid}</Button></StyledTableCell>
-                                        <StyledTableCell align="left"><Button>Buy{row.offer}</Button></StyledTableCell>
-                                        <StyledTableCell align="left">{row.valid_for}</StyledTableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Box>
-            </Container>
-        </ThemeProvider>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Box>
+        </Container>
     );
 }

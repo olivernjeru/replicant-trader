@@ -1,39 +1,17 @@
 import * as React from "react";
 import { Box, TextField, Button, Typography, Grid, Paper, InputAdornment, IconButton } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Divider from "@mui/material/Divider";
 import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import './Chat.css'
 
 const messages = [
   { id: 1, text: "Hi there!", sender: "client" },
   { id: 2, text: "Hello!", sender: "user" },
   { id: 3, text: "How can I assist you today?", sender: "client" },
 ];
-
-const defaultTheme = createTheme({
-  components: {
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiInputLabel-root, & .MuiOutlinedInput-input': {
-            color: 'white', // Change text color to white
-          },
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'white', // Change border color to white
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#1F63E8', // Change border color on hover to white
-          },
-        },
-      },
-    },
-  },
-});
 
 export default function Chat() {
   const [input, setInput] = React.useState("");
@@ -57,7 +35,6 @@ export default function Chat() {
 
   return (
     <Container sx={{ display: 'flex' }}>
-      <ThemeProvider theme={defaultTheme}>
         <Box>
           <TextField
             label="Search"
@@ -132,7 +109,6 @@ export default function Chat() {
             </Grid>
           </Box>
         </Box>
-      </ThemeProvider>
     </Container>
   );
 };

@@ -6,7 +6,6 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
-import './Quote.css';
 import QuotesTable from './QuotesTable';
 import { useNavigate } from 'react-router-dom';
 import { getDatabase, ref, push, onValue } from "firebase/database";
