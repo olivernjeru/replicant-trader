@@ -1,11 +1,7 @@
-import * as React from "react";
-import { Box, TextField, Button, Typography, Grid, Paper, InputAdornment, IconButton } from "@mui/material";
+import React, { useState } from "react";
+import { Box, TextField, Button, Typography, Grid, Paper, InputAdornment, IconButton, Divider, Container, Avatar, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import Divider from "@mui/material/Divider";
-import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
-import { Avatar } from "@mui/material";
-import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 
 const messages = [
   { id: 1, text: "Hi there!", sender: "client" },
@@ -14,7 +10,8 @@ const messages = [
 ];
 
 export default function Chat() {
-  const [input, setInput] = React.useState("");
+  const [input, setInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleSend = () => {
     if (input.trim() !== "") {
@@ -26,8 +23,6 @@ export default function Chat() {
   const handleInputChange = (event) => {
     setInput(event.target.value);
   };
-
-  const [searchTerm, setSearchTerm] = React.useState("");
 
   const handleChange = (event) => {
     setSearchTerm(event.target.value);
@@ -69,7 +64,6 @@ export default function Chat() {
           display: "flex",
           flexDirection: "column",
           padding: '1%'
-          // bgcolor: "grey.200",
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -84,8 +78,8 @@ export default function Chat() {
         </Box>
         <Divider />
         <Box sx={{ p: 3 }}>
-          <Grid container spacing={1}>
-            <Grid item xs={0}>
+          <Grid container spacing={1} alignItems="center">
+            <Grid item xs={9}>
               <TextField
                 size="small"
                 fullWidth
@@ -111,7 +105,7 @@ export default function Chat() {
       </Box>
     </Container>
   );
-};
+}
 
 const Message = ({ message }) => {
   const isClient = message.sender === "client";

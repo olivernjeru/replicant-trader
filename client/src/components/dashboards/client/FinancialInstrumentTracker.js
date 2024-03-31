@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -7,8 +7,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { Container } from '@mui/material';
-import styled from '@emotion/styled';
-import './FinancialInstrumentTracker.css';
 
 function createData(equity, bond, fx, commodity) {
   return { equity, bond, fx, commodity };
@@ -37,10 +35,7 @@ export default function FinancialInstrumentTracker() {
           </TableHead>
           <TableBody>
             {rows.map((row) => (
-              <TableRow
-                key={row.equity}
-                // sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
+              <TableRow key={row.equity}>
                 <TableCell component="th" scope="row">
                   {row.equity}
                 </TableCell>
