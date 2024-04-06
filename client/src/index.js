@@ -5,7 +5,6 @@ import App from './App';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import LogInPage from './pages/LogInPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import ResetPasswordPromptPage from './pages/ResetPasswordPromptPage';
 import SignUpPage from './pages/SignUpPage';
 import SubmitDetailsPage from './pages/SubmitDetailsPage';
 import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
@@ -23,10 +22,6 @@ const router = createBrowserRouter([
   {
     path: "reset-password",
     element: <ResetPasswordPage />
-  },
-  {
-    path: "reset-password-prompt",
-    element: <ResetPasswordPromptPage />
   },
   {
     path: "sign-up",
