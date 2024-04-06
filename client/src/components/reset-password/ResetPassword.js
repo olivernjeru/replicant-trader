@@ -9,6 +9,10 @@ import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import './ResetPassword.css'
 import { Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { auth } from '../../firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { useState } from 'react';
 
 const defaultTheme = createTheme({
     components: {
@@ -32,15 +36,21 @@ const defaultTheme = createTheme({
 
 
 export default function ResetPassword() {
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        console.log({
-            username: data.get('username'),
-            password: data.get('password'),
-        });
-    };
+    const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [success, setSuccess] = useState(null);
+    const [error, setError] = useState('');
 
+    const resetPassword = async (event) => {
+        event.preventDefault();
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setSuccess('Password reset email sent!');
+        } catch (error) {
+            console.log(error);
+            setError(error.message);
+        }
+    };
     return (
         <ThemeProvider theme={defaultTheme}>
             <Container component="main" maxWidth="sm">
@@ -60,16 +70,18 @@ export default function ResetPassword() {
                     <Typography component="h1" variant="h5">
                         RESET PASSWORD
                     </Typography>
-                    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+                    <Box component="form" onSubmit={resetPassword} noValidate sx={{ mt: 2 }}>
                         <TextField
                             margin="normal"
                             required
                             fullWidth
-                            id="username"
-                            label="Username"
-                            name="username"
-                            autoComplete="username"
+                            id="email"
+                            label="Email"
+                            name="email"
+                            autoComplete="email"
+                            type='email'
                             autoFocus
+                            value={email} onChange={(e) => setEmail(e.target.value)}
                         />
                         <Grid container spacing={2}>
                             <Grid item xs={6}>
@@ -90,16 +102,14 @@ export default function ResetPassword() {
                                     size="large"
                                     variant="contained"
                                     fullWidth
-                                    component={RouterLink}
-                                    to="/reset-password-prompt"
                                     sx={{ mt: 4, mb: 2 }}
                                 >
                                     RESET
                                 </Button>
                             </Grid>
-
+                            {success && <Typography>{success}</Typography>}
+                                {error && <Typography>{error}</Typography>}
                         </Grid>
-
                     </Box>
                 </Box>
             </Container>
