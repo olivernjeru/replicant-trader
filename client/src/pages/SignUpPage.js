@@ -1,7 +1,7 @@
 import React from 'react';
 import './SignUpPage.css';
 import MainLayout from '../layout/NotLoggedInMainLayout';
-import SignUp from '../components/sign-up/SignUp';
+import SignUp from '../components/authentication/sign-up/SignUp';
 
 
 
