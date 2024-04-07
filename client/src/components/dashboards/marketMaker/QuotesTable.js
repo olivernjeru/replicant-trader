@@ -43,12 +43,12 @@ TabPanel.propTypes = {
     value: PropTypes.number.isRequired,
 };
 
-function createData(client, security, volume, bid, offer, valid_for) {
-    return { client, security, volume, bid, offer, valid_for };
+function createData(security, volume, bid, offer, valid_for) {
+    return {security, volume, bid, offer, valid_for };
 }
 
 const rows = [
-    createData('Jane Doe', 'TSLA', 4000, 211.20, 209.20, 120)
+    createData('TSLA', 4000, 211.20, 209.20, 120)
 ];
 
 export default function QuotesTable() {
@@ -93,10 +93,9 @@ export default function QuotesTable() {
                 {[0, 1].map((index) => (
                     <TabPanel key={index} value={value} index={index} dir={theme.direction}>
                         <TableContainer component={Paper}>
-                            <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
+                            <Table sx={{ maxWidth: 500 }} size="small" aria-label="a dense table">
                                 <TableHead>
                                     <TableRow>
-                                        <StyledTableCell>CLIENT</StyledTableCell>
                                         <StyledTableCell align="left">SECURITY</StyledTableCell>
                                         <StyledTableCell align="left">VOLUME</StyledTableCell>
                                         <StyledTableCell align="left">BID</StyledTableCell>
@@ -110,9 +109,6 @@ export default function QuotesTable() {
                                             key={row.client}
                                             sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                                         >
-                                            <StyledTableCell component="th" scope="row">
-                                                {row.client}
-                                            </StyledTableCell>
                                             <StyledTableCell align="left">{row.security}</StyledTableCell>
                                             <StyledTableCell align="left">{row.volume}</StyledTableCell>
                                             <StyledTableCell align="left">{row.bid}</StyledTableCell>
