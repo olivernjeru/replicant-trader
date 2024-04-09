@@ -8,7 +8,8 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { Container } from '@mui/material';
 import { restClient } from '@polygon.io/client-js';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { CircularProgress } from '@mui/material';
 
 function createData(equity, bond, fx, commodity) {
   return { equity, bond, fx, commodity };
@@ -21,45 +22,63 @@ const rows = [
   createData('AAPL', '', '+1.4%', 'EQUITY'),
 ];
 
+const CACHE_DURATION = 10000; // 10 seconds
 const key = 'kyRSBvqT4I22HyjEz9sRp6Q9bHc6LAZH';
 
 export default function FinancialInstrumentTracker() {
-  const [teslaPrice, setTeslaPrice] = useState(''); // State for closing price
-  const [applePrice, setApplePrice] = useState(''); // State for closing price
-  const [amazonPrice, setAmazonPrice] = useState(''); // State for closing price
+  const [prices, setPrices] = useState({}); // State for all fetched prices
+  const [startDate, setStartDate] = useState(''); // State for start date
+  const [endDate, setEndDate] = useState(''); // State for end date
+  const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+  const [lastFetched, setLastFetched] = useState(null); // State to track last fetch time
+  const [error, setError] = useState(null); // State for error message
 
   const fetchData = async () => {
+    setIsLoading(true); // Set loading indicator to true
+    setError(null); // Clear any previous error
     const rest = restClient(key);
+    const tickers = ['TSLA', 'AAPL', 'AMZN']; // Array of tickers
 
     try {
-      const teslaData = await rest.stocks.aggregates("TSLA", 1, "day", "2024-04-01", "2024-04-08");
-      setTeslaPrice(teslaData.results[0].c); // Update state with closing price
-      const appleData = await rest.stocks.aggregates("AAPL", 1, "day", "2024-04-01", "2024-04-08");
-      setApplePrice(appleData.results[0].c); // Update state with closing price
-      const amazonData = await rest.stocks.aggregates("AMZN", 1, "day", "2024-04-01", "2024-04-08");
-      setAmazonPrice(amazonData.results[0].c); // Update state with closing price
-    }
-    // .then((data) => {
-    //   const { ticker, results } = data;
-    //   console.log(`Ticker: ${ticker}`);
+      // Calculate dates (assuming today is stored in a variable)
+      const today = new Date();
+      const endDate = today.toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
+      const startDate = new Date(today.getTime() - (1 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
 
-    //   results.forEach((day) => {
-    //     console.log(`Date: ${new Date(day.t * 1000).toLocaleDateString()}`);
-    //     console.log(`Open: ${day.o}`);
-    //     console.log(`High: ${day.h}`);
-    //     console.log(`Low: ${day.l}`);
-    //     console.log(`Close: ${day.c}`);
-    //     console.log("---");
-    //   });
-    // })
-    // .
-    catch (error) {
+      setStartDate(startDate);
+      setEndDate(endDate);
+
+      // Check if data is cached and within expiration time
+      const isCached = lastFetched && (Date.now() - lastFetched) < CACHE_DURATION;
+      if (isCached) return; // Use cached data if available
+
+      // Concurrent API calls using Promise.all
+      const allPromises = tickers.map((ticker) =>
+        rest.stocks.aggregates(ticker, 1, 'day', startDate, endDate)
+      );
+
+      const responses = await Promise.all(allPromises);
+
+      // Update state with all fetched prices
+      const fetchedPrices = {};
+      responses.forEach((response) => {
+        fetchedPrices[response.ticker] = response.results[0].c;
+      });
+      setPrices(fetchedPrices);
+    } catch (error) {
       console.error('An error happened:', error);
-    };
+      setError('An error occurred fetching data. Please try again later.');
+    } finally {
+      setIsLoading(false); // Set loading indicator to false (always run)
+    }
   };
 
-  // Call fetchData every 10 seconds (adjust the interval as needed)
-  setInterval(fetchData, 10000);
+  // Call fetchData on component mount
+  useEffect(() => {
+    fetchData();
+    const intervalId = setInterval(fetchData, 10000);
+    return () => clearInterval(intervalId); // Clear interval on unmount
+  }, []);
 
   return (
     <Container>
@@ -75,20 +94,21 @@ export default function FinancialInstrumentTracker() {
           </TableHead>
           <TableBody>
             {rows.map((row) => (
-              <TableRow
-                key={row.equity}
-              // sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
+              <TableRow key={row.equity}>
                 <TableCell component="th" scope="row">
                   {row.equity}
                 </TableCell>
-                <TableCell align="center">{row.equity === 'TSLA'
-                  ? `$${teslaPrice}`
-                  : row.equity === 'AAPL'
-                    ? `$${applePrice}`
-                    : row.equity === 'AMZN'
-                      ? `$${amazonPrice}`
-                      : row.bond}</TableCell>
+                <TableCell align="center">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {isLoading ? (
+                      <CircularProgress size="small" sx={{ color: 'red' }} />
+                    ) : prices[row.equity] ? (
+                      <span style={{ color: 'black' }}>{`$${prices[row.equity]}`}</span>
+                    ) : (
+                      <span style={{ color: '#212121' }}>{row.bond}</span>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell align="center">{row.fx}</TableCell>
                 <TableCell align="center">{row.commodity}</TableCell>
               </TableRow>
@@ -96,6 +116,7 @@ export default function FinancialInstrumentTracker() {
           </TableBody>
         </Table>
       </TableContainer>
+
     </Container>
   );
 }
