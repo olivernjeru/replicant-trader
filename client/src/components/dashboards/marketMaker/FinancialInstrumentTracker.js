@@ -22,7 +22,7 @@ const rows = [
   createData('AAPL', '', '+1.4%', 'EQUITY'),
 ];
 
-const CACHE_DURATION = 10000; // 10 seconds
+const CACHE_DURATION = 30000; // 30 seconds
 const key = 'kyRSBvqT4I22HyjEz9sRp6Q9bHc6LAZH';
 
 export default function FinancialInstrumentTracker() {
@@ -76,7 +76,7 @@ export default function FinancialInstrumentTracker() {
   // Call fetchData on component mount
   useEffect(() => {
     fetchData();
-    const intervalId = setInterval(fetchData, 10000);
+    const intervalId = setInterval(fetchData, 60000);
     return () => clearInterval(intervalId); // Clear interval on unmount
   }, []);
 
