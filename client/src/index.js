@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -11,7 +11,10 @@ import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import PrivateRoutes from './components/authentication/privateRoutes/PrivateRoutes';
 
-ReactDOM.render(
+const container = document.getElementById('root');
+const root = createRoot(container);
+
+root.render(
   <Router>
     <Routes>
       <Route path="/" element={<App />} />
@@ -24,6 +27,5 @@ ReactDOM.render(
         <Route path='client' element={<ClientDashboardPage />} />
       </Route>
     </Routes>
-  </Router>,
-  document.getElementById('root')
+  </Router>
 );
