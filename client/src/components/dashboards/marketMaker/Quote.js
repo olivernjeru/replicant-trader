@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import QuotesTable from './QuotesTable';
-import { getDatabase, ref, push, onValue } from "firebase/database";
+import { getDatabase, ref, push } from "firebase/database";
 
 const defaultTheme = createTheme({
     components: {
@@ -29,68 +29,55 @@ const defaultTheme = createTheme({
     },
 });
 
-function createData(client, security, volume, bid, offer, valid_for) {
-    return { client, security, volume, bid, offer, valid_for };
-}
+const initialState = {
+    stockTicker: '',
+    bid: '',
+    offer: '',
+    volume: '',
+    validFor: '',
+};
 
 export default function Quote() {
-    const [stockTicker, setStockTicker] = useState('');
-    const [bid, setBid] = useState('');
-    const [offer, setOffer] = useState('');
-    const [volume, setVolume] = useState('');
-    const [validFor, setValidFor] = useState('');
-    const [error, setError] = useState('');
-
+    const [formData, setFormData] = useState(initialState);
     const db = getDatabase();
+
+    const handleFormChange = (event) => {
+        const { name, value } = event.target;
+        setFormData({ ...formData, [name]: value });
+    };
 
     const sendQuote = (event) => {
         event.preventDefault();
+        const { stockTicker, bid, offer, volume, validFor } = formData;
 
         // Form validation
-        if (!stockTicker) {
-            setError('Enter Stock Ticker.');
-            return;
-        }
-        else if (!bid) {
-            setError('Enter Bid.');
-            return;
-        }
-        else if (!offer) {
-            setError('Enter Offer.');
-            return;
-        }
-        else if (!volume) {
-            setError('Enter Volume.');
-            return;
-        }
-        else if (!validFor) {
-            setError('Enter Quote Validity.');
+        if (!stockTicker || !bid || !offer || !volume || !validFor) {
+            setFormData({ ...formData, error: 'All fields are required.' });
             return;
         }
 
+        // Additional validation (e.g., numeric values for bid, offer, volume)
+        // You can add your validation logic here
+
         // Clear previous error messages
-        setError('');
+        setFormData({ ...formData, error: '' });
 
         // Generate a unique timestamp representing the current time
         const currentTime = new Date().getTime();
 
-        push(ref(db, `quotes/${currentTime}`), {
-            stockTicker: stockTicker,
-            bid: bid,
-            offer: offer,
-            volume: volume,
-            validFor: validFor,
-        })
+        push(ref(db, `quotes/${currentTime}`), formData)
             .then(() => {
                 console.log('Data Saved Successfully');
+                // Reset form fields after successful submission
+                setFormData(initialState);
             })
             .catch((error) => {
                 if (error.code === 'PERMISSION_DENIED') {
-                    setError('Permission denied. Check your database rules.');
+                    setFormData({ ...formData, error: 'Permission denied. Check your database rules.' });
                 } else {
-                    setError('An error occurred while saving data:', error.message);
+                    setFormData({ ...formData, error: `An error occurred while saving data: ${error.message}` });
                 }
-            })
+            });
     };
 
     return (
@@ -104,18 +91,18 @@ export default function Quote() {
                         alignItems: 'center',
                     }}
                 >
-                    <Box component="form" onSubmit={sendQuote} noValidate >
+                    <form onSubmit={sendQuote} noValidate >
                         <Box sx={{ display: 'flex' }}>
                             <TextField
                                 margin="normal"
                                 required
                                 id="stock-ticker-input"
-                                label="TSLA"
-                                name="stock-ticker-input"
-                                autoComplete="stock-ticker-input"
+                                label="Stock Ticker"
+                                name="stockTicker"
+                                autoComplete="off"
                                 sx={{ margin: 1 }}
-                                value={stockTicker}
-                                onChange={(event) => setStockTicker(event.target.value)}
+                                value={formData.stockTicker}
+                                onChange={handleFormChange}
                             />
                             <TextField
                                 margin="normal"
@@ -123,10 +110,11 @@ export default function Quote() {
                                 id="bid"
                                 label="Bid"
                                 name="bid"
-                                autoComplete="bid"
+                                type="number"
+                                autoComplete="off"
                                 sx={{ margin: 1 }}
-                                value={bid}
-                                onChange={(event) => setBid(event.target.value)}
+                                value={formData.bid}
+                                onChange={handleFormChange}
                             />
                         </Box>
                         <Box sx={{ display: 'flex' }}>
@@ -136,21 +124,23 @@ export default function Quote() {
                                 id="offer"
                                 label="Offer"
                                 name="offer"
-                                autoComplete="offer"
+                                type="number"
+                                autoComplete="off"
                                 sx={{ margin: 1 }}
-                                value={offer}
-                                onChange={(event) => setOffer(event.target.value)}
+                                value={formData.offer}
+                                onChange={handleFormChange}
                             />
                             <TextField
                                 margin="normal"
                                 required
                                 id="volume"
-                                label="Vol"
-                                name="volime"
-                                autoComplete="volume"
+                                label="Volume"
+                                name="volume"
+                                type="number"
+                                autoComplete="off"
                                 sx={{ margin: 1 }}
-                                value={volume}
-                                onChange={(event) => setVolume(event.target.value)}
+                                value={formData.volume}
+                                onChange={handleFormChange}
                             />
                         </Box>
                         <TextField
@@ -158,13 +148,13 @@ export default function Quote() {
                             required
                             id="valid-for"
                             label="Valid for"
-                            name="valid-for"
-                            autoComplete="valid-for"
+                            name="validFor"
+                            autoComplete="off"
                             sx={{ margin: 1 }}
-                            value={validFor}
-                            onChange={(event) => setValidFor(event.target.value)}
+                            value={formData.validFor}
+                            onChange={handleFormChange}
                         />
-                        {error && <Typography color="error" variant="body2">{error}</Typography>}
+                        {formData.error && <Typography color="error" variant="body2">{formData.error}</Typography>}
                         <Button
                             type="submit"
                             fullWidth
@@ -173,7 +163,7 @@ export default function Quote() {
                         >
                             SEND QUOTE
                         </Button>
-                    </Box>
+                    </form>
                     <QuotesTable />
                 </Box>
             </Container>
