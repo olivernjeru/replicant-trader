@@ -16,10 +16,57 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import styled from '@emotion/styled';
 import { getDatabase, ref, onValue } from "firebase/database";
+import isEqual from 'lodash/isEqual';
 
-const StyledTableCell = styled(TableCell)({
+const StickyStyledTableCell = styled(TableCell)({
     color: 'black',
+    position: 'sticky',
+    top: 0,
+    backgroundColor: 'white', // Set background color if needed
+    zIndex: 1, // Ensure the header remains on top of other content
 });
+
+function QuoteTableRow({ row }) {
+    return (
+        <TableRow>
+            <TableCell align="left">{row.stockTicker}</TableCell>
+            <TableCell align="left">{row.volume}</TableCell>
+            <TableCell align="left">{row.bid}</TableCell>
+            <TableCell align="left">{row.offer}</TableCell>
+            <TableCell align="left">
+                <Typography>
+                    <CountdownTimer initialValue={parseInt(row.validFor)} />
+                </Typography>
+            </TableCell>
+        </TableRow>
+    );
+}
+
+QuoteTableRow.propTypes = {
+    row: PropTypes.object.isRequired,
+};
+
+function CountdownTimer({ initialValue }) {
+    const [secondsLeft, setSecondsLeft] = useState(initialValue);
+
+    useEffect(() => {
+        if (secondsLeft > 0) {
+            const timer = setInterval(() => {
+                setSecondsLeft(prevSeconds => prevSeconds - 1);
+            }, 1000);
+
+            return () => clearInterval(timer);
+        }
+    }, [secondsLeft]);
+
+    return (
+        <Typography color="black">{secondsLeft > 0 ? `${secondsLeft} seconds` : '0 seconds'}</Typography>
+    );
+}
+
+CountdownTimer.propTypes = {
+    initialValue: PropTypes.number.isRequired,
+};
 
 function TabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -60,7 +107,25 @@ export default function QuotesTable() {
                         ...quote
                     }))
                 );
-                setRows(updatedRows);
+                // Reverse the order of the rows to display the latest quotes first
+                setRows(prevRows => {
+                    // Check if there are any new quotes
+                    const newQuotes = updatedRows.filter(newRow => !prevRows.some(prevRow => prevRow.id === newRow.id));
+                    // Check if there are any updated quotes
+                    const updatedQuotes = updatedRows.filter(newRow => prevRows.some(prevRow => prevRow.id === newRow.id && !isEqual(prevRow, newRow)));
+                    // Check if there are any removed quotes
+                    const removedQuotes = prevRows.filter(prevRow => !updatedRows.some(newRow => newRow.id === prevRow.id));
+
+                    // Add new quotes and update existing quotes
+                    const mergedRows = [
+                        ...prevRows.filter(prevRow => !removedQuotes.some(removedRow => removedRow.id === prevRow.id)),
+                        ...newQuotes,
+                        ...updatedQuotes
+                    ];
+
+                    // Reverse the order again to display the latest quotes first
+                    return mergedRows.reverse();
+                });
             }
         });
 
@@ -108,26 +173,20 @@ export default function QuotesTable() {
             >
                 {[0, 1].map((index) => (
                     <TabPanel key={index} value={value} index={index} dir={theme.direction}>
-                        <TableContainer component={Paper}>
-                            <Table sx={{ maxWidth: 500 }} size="small" aria-label="a dense table">
+                        <TableContainer component={Paper} sx={{ maxHeight: 150, overflowY: 'auto' }}>
+                            <Table size="small" aria-label="a dense table">
                                 <TableHead>
                                     <TableRow>
-                                        <StyledTableCell align="left">SECURITY</StyledTableCell>
-                                        <StyledTableCell align="left">VOLUME</StyledTableCell>
-                                        <StyledTableCell align="left">BID</StyledTableCell>
-                                        <StyledTableCell align="left">OFFER</StyledTableCell>
-                                        <StyledTableCell align="left">VALID FOR</StyledTableCell>
+                                        <StickyStyledTableCell align="left">SECURITY</StickyStyledTableCell>
+                                        <StickyStyledTableCell align="left">VOLUME</StickyStyledTableCell>
+                                        <StickyStyledTableCell align="left">BID</StickyStyledTableCell>
+                                        <StickyStyledTableCell align="left">OFFER</StickyStyledTableCell>
+                                        <StickyStyledTableCell align="left">VALID FOR</StickyStyledTableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {rows.map((row, index) => (
-                                        <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                            <StyledTableCell align="left">{row.stockTicker}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.volume}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.bid}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.offer}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.validFor}</StyledTableCell>
-                                        </TableRow>
+                                        <QuoteTableRow key={row.id} row={row} />
                                     ))}
                                 </TableBody>
                             </Table>
