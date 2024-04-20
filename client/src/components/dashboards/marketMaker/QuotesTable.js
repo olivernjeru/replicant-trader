@@ -26,18 +26,20 @@ const StickyStyledTableCell = styled(TableCell)({
     zIndex: 1, // Ensure the header remains on top of other content
 });
 
+const StyledTableCell = styled(TableCell)({
+    color: 'black',
+});
+
 function QuoteTableRow({ row }) {
     return (
         <TableRow>
-            <TableCell align="left">{row.stockTicker}</TableCell>
-            <TableCell align="left">{row.volume}</TableCell>
-            <TableCell align="left">{row.bid}</TableCell>
-            <TableCell align="left">{row.offer}</TableCell>
-            <TableCell align="left">
-                <Typography>
-                    <CountdownTimer initialValue={parseInt(row.validFor)} />
-                </Typography>
-            </TableCell>
+            <StyledTableCell align="left">{row.stockTicker}</StyledTableCell>
+            <StyledTableCell align="left">{row.volume}</StyledTableCell>
+            <StyledTableCell align="left">{row.bid}</StyledTableCell>
+            <StyledTableCell align="left">{row.offer}</StyledTableCell>
+            <StyledTableCell align="left">
+                <CountdownTimer initialValue={parseInt(row.validFor)} status={row.status} />
+            </StyledTableCell>
         </TableRow>
     );
 }
@@ -46,18 +48,38 @@ QuoteTableRow.propTypes = {
     row: PropTypes.object.isRequired,
 };
 
-function CountdownTimer({ initialValue }) {
-    const [secondsLeft, setSecondsLeft] = useState(initialValue);
+function CountdownTimer({ initialValue, status }) {
+    const [secondsLeft, setSecondsLeft] = useState(() => {
+        // Retrieve the remaining time from local storage
+        const storedTime = localStorage.getItem(`countdownTime-${initialValue}`);
+        // If the stored time is found, parse and return it
+        if (storedTime && status === 'active') {
+            return Math.max(0, parseInt(storedTime, 10));
+        }
+        // If not found or the status is not active, use the provided initial value
+        return initialValue > 0 ? initialValue : 0;
+    });
 
     useEffect(() => {
-        if (secondsLeft > 0) {
-            const timer = setInterval(() => {
-                setSecondsLeft(prevSeconds => prevSeconds - 1);
+        let timer;
+        if (status === 'active' && secondsLeft > 0) {
+            // Store the remaining time in local storage
+            localStorage.setItem(`countdownTime-${initialValue}`, secondsLeft.toString());
+            // Start the countdown timer
+            timer = setInterval(() => {
+                setSecondsLeft(prevSeconds => {
+                    const newSeconds = prevSeconds - 1;
+                    // Update the remaining time in local storage
+                    localStorage.setItem(`countdownTime-${initialValue}`, newSeconds.toString());
+                    return Math.max(0, newSeconds);
+                });
             }, 1000);
-
-            return () => clearInterval(timer);
         }
-    }, [secondsLeft]);
+
+        return () => {
+            clearInterval(timer);
+        };
+    }, [initialValue, status, secondsLeft]);
 
     return (
         <Typography color="black">{secondsLeft > 0 ? `${secondsLeft} seconds` : '0 seconds'}</Typography>
@@ -66,6 +88,7 @@ function CountdownTimer({ initialValue }) {
 
 CountdownTimer.propTypes = {
     initialValue: PropTypes.number.isRequired,
+    status: PropTypes.string.isRequired,
 };
 
 function TabPanel(props) {
@@ -104,6 +127,7 @@ export default function QuotesTable() {
                 const updatedRows = Object.entries(data).flatMap(([timestamp, quotes]) =>
                     Object.entries(quotes).map(([id, quote]) => ({
                         id,
+                        status: 'active', // Add status property and initialize it as 'active'
                         ...quote
                     }))
                 );
