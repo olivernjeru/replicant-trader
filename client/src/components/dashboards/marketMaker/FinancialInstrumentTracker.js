@@ -23,7 +23,7 @@ const rows = [
 ];
 
 const CACHE_DURATION = 30000; // 30 seconds
-const key = 'kyRSBvqT4I22HyjEz9sRp6Q9bHc6LAZH';
+const key = process.env.REACT_APP_POLYGONIO_MM_KEY;
 
 export default function FinancialInstrumentTracker() {
   const [prices, setPrices] = useState({}); // State for all fetched prices
