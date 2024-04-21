@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import Avatar from '@mui/material/Avatar';
+import SettingsIcon from '@mui/icons-material/Settings';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -19,7 +20,7 @@ import './LoggedIn.css';
 export default function LoggedIn() {
   const navigate = useNavigate();
 
-  const signOut = () =>{
+  const signOut = () => {
     auth.signOut();
     navigate('/');
   }
@@ -47,7 +48,7 @@ export default function LoggedIn() {
       <Toolbar>
         <div className="left">
           <Link href="/">Trade</Link>
-            {currentTime}
+          {currentTime}
         </div>
         <div className="right">
           <Tooltip title="Account settings">
@@ -58,7 +59,7 @@ export default function LoggedIn() {
               aria-haspopup="true"
               aria-expanded={open ? 'true' : undefined}
             >
-              <Avatar sx={{ width: 32, height: 32 }}>M</Avatar>
+              <Avatar sx={{ width: 32, height: 32 }}></Avatar>
             </IconButton>
           </Tooltip>
         </div>
@@ -98,11 +99,15 @@ export default function LoggedIn() {
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          <MenuItem onClick={handleClose}>
-            <Avatar /> {user?.email}
+          <MenuItem onClick={handleClose} sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <SettingsIcon sx={{ marginRight: '8px' }} /> {user?.email}
           </MenuItem>
           <Divider />
-          <MenuItem onClick={()=>signOut()}>
+          <MenuItem onClick={() => signOut()}>
             <ListItemIcon>
               <Logout fontSize="small" />
             </ListItemIcon>
