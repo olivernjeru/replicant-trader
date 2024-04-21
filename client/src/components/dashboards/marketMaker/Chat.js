@@ -35,80 +35,80 @@ export default function Chat() {
 
   return (
     <Container sx={{ display: 'flex' }}>
-        <Box>
-          <TextField
-            label="Search"
-            variant="outlined"
-            size="small"
-            fullWidth
-            sx={{ mb: 3 }}
-            value={searchTerm}
-            onChange={handleChange}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton aria-label="search">
-                    <SearchIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Divider />
-          <List>
+      <Box>
+        <TextField
+          label="Search"
+          variant="outlined"
+          size="small"
+          fullWidth
+          sx={{ mb: 3 }}
+          value={searchTerm}
+          onChange={handleChange}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton aria-label="search">
+                  <SearchIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+        <Divider />
+        <List>
           <ListItem disablePadding>
             <ListItemButton>
               <ListItemText primary="Jane Doe" />
             </ListItemButton>
           </ListItem>
-          </List>
+        </List>
+      </Box>
+      <Box
+        sx={{
+          height: "40vh",
+          display: "flex",
+          flexDirection: "column",
+          padding: '1%'
+          // bgcolor: "grey.200",
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar></Avatar>
+          <Typography variant="body1" gutterBottom sx={{ paddingLeft: '12%', paddingRight: '12%' }}>JANE DOE</Typography>
+          <Typography variant="body1" gutterBottom>543 789 8890</Typography>
         </Box>
-        <Box
-          sx={{
-            height: "40vh",
-            display: "flex",
-            flexDirection: "column",
-            padding: '1%'
-            // bgcolor: "grey.200",
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar></Avatar>
-            <Typography variant="body1" gutterBottom sx={{ paddingLeft: '12%', paddingRight: '12%' }}>JANE DOE</Typography>
-            <Typography variant="body1" gutterBottom>543 789 8890</Typography>
-          </Box>
-          <Box sx={{ flexGrow: 1, p: 2 }}>
-            {messages.map((message) => (
-              <Message key={message.id} message={message} />
-            ))}
-          </Box>
-          <Divider />
-          <Box sx={{ p: 3, backgroundColor: "background.primary" }}>
-            <Grid container spacing={1}>
-              <Grid item xs={0}>
-                <TextField
-                  size="small"
-                  fullWidth
-                  placeholder="Type a message"
-                  variant="outlined"
-                  value={input}
-                  onChange={handleInputChange}
-                />
-              </Grid>
-              <Grid item xs={3}>
-                <Button
-                  fullWidth
-                  color="primary"
-                  variant="contained"
-                  endIcon={<SendIcon />}
-                  onClick={handleSend}
-                >
-                  Send
-                </Button>
-              </Grid>
+        <Box sx={{ flexGrow: 1, p: 2 }}>
+          {messages.map((message) => (
+            <Message key={message.id} message={message} />
+          ))}
+        </Box>
+        <Divider />
+        <Box sx={{ p: 3, backgroundColor: "background.primary" }}>
+          <Grid container spacing={1}>
+            <Grid item xs={0}>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Type a message"
+                variant="outlined"
+                value={input}
+                onChange={handleInputChange}
+              />
             </Grid>
-          </Box>
+            <Grid item xs={3}>
+              <Button
+                fullWidth
+                color="primary"
+                variant="contained"
+                endIcon={<SendIcon />}
+                onClick={handleSend}
+              >
+                Send
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
+      </Box>
     </Container>
   );
 };

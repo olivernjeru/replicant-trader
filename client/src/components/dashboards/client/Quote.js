@@ -32,7 +32,7 @@ TabPanel.propTypes = {
 };
 
 function createData(security, volume, bid, offer, valid_for) {
-    return {security, volume, bid, offer, valid_for };
+    return { security, volume, bid, offer, valid_for };
 }
 
 const rows = [
