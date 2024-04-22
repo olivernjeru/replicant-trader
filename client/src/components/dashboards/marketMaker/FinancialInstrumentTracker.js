@@ -29,47 +29,43 @@ export default function FinancialInstrumentTracker() {
   const [prices, setPrices] = useState({}); // State for all fetched prices
   const [startDate, setStartDate] = useState(''); // State for start date
   const [endDate, setEndDate] = useState(''); // State for end date
-  const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+  const [isLoading, setIsLoading] = useState(true); // State for loading indicator
   const [lastFetched, setLastFetched] = useState(null); // State to track last fetch time
   const [error, setError] = useState(null); // State for error message
 
   const fetchData = async () => {
-    setIsLoading(true); // Set loading indicator to true
-    setError(null); // Clear any previous error
+    setError(null);
+
     const rest = restClient(key);
-    const tickers = ['TSLA', 'AAPL', 'AMZN']; // Array of tickers
+    const tickers = ['TSLA', 'AAPL', 'AMZN'];
 
     try {
-      // Calculate dates (assuming today is stored in a variable)
       const today = new Date();
-      const endDate = today.toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
-      const startDate = new Date(today.getTime() - (1 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      const endDate = today.toISOString().split('T')[0];
+      const startDate = new Date(today.getTime() - (3 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
 
       setStartDate(startDate);
       setEndDate(endDate);
 
-      // Check if data is cached and within expiration time
       const isCached = lastFetched && (Date.now() - lastFetched) < CACHE_DURATION;
-      if (isCached) return; // Use cached data if available
+      if (isCached) return;
 
-      // Concurrent API calls using Promise.all
       const allPromises = tickers.map((ticker) =>
         rest.stocks.aggregates(ticker, 1, 'day', startDate, endDate)
       );
 
       const responses = await Promise.all(allPromises);
 
-      // Update state with all fetched prices
       const fetchedPrices = {};
       responses.forEach((response) => {
         fetchedPrices[response.ticker] = response.results[0].c;
       });
       setPrices(fetchedPrices);
+      setIsLoading(false);
     } catch (error) {
-      console.error('An error happened:', error);
-      setError('An error occurred fetching data. Please try again later.');
-    } finally {
-      setIsLoading(false); // Set loading indicator to false (always run)
+      console.error('An error occurred while fetching data:', error);
+      setError('An error occurred while fetching data. Please try again later.');
+      setIsLoading(false);
     }
   };
 
@@ -101,7 +97,7 @@ export default function FinancialInstrumentTracker() {
                 <TableCell align="center">
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     {isLoading ? (
-                      <CircularProgress size="small" sx={{ color: 'red' }} />
+                      <CircularProgress size="small" />
                     ) : prices[row.equity] ? (
                       <span style={{ color: 'black' }}>{`$${prices[row.equity]}`}</span>
                     ) : (
