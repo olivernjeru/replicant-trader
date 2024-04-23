@@ -76,7 +76,7 @@ export default function FinancialInstrumentTracker() {
   // Call fetchData on component mount
   useEffect(() => {
     fetchData();
-    const intervalId = setInterval(fetchData, 6000);
+    const intervalId = setInterval(fetchData, 60000);
     return () => clearInterval(intervalId); // Clear interval on unmount
   }, []);
 
