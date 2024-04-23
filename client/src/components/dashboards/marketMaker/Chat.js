@@ -122,7 +122,7 @@ export default function Chat() {
         <List>
           <ListItem disablePadding>
             <ListItemButton>
-              <ListItemText primary="Jane Doe" />
+              <ListItemText primary="JANE DOE" />
             </ListItemButton>
           </ListItem>
         </List>
@@ -140,7 +140,7 @@ export default function Chat() {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: 1 }}>
           <Avatar sx={{ width: 32, height: 32 }} />
-          <Typography> JANE DOE </Typography>
+          <Typography>JANE DOE</Typography> {/* Display the email address of the sender */}
           <Typography> 543 789 8890 </Typography>
         </Box>
         <Divider sx={{ backgroundColor: 'white' }} />
@@ -164,7 +164,7 @@ export default function Chat() {
           }}
         >
           {messages.map((message) => (
-            <Message key={message.id} message={message} />
+            <Message key={message.id} message={message} currentUser={user} />
           ))}
         </Box>
         {error && (
@@ -229,9 +229,8 @@ export default function Chat() {
   );
 };
 
-const Message = ({ message }) => {
-  const [user] = useAuthState(auth);
-  const isCurrentUserMessage = message.uid === user?.uid;
+const Message = ({ message, currentUser }) => {
+  const isCurrentUserMessage = message.uid === currentUser.uid;
 
   return (
     <Box
@@ -249,7 +248,7 @@ const Message = ({ message }) => {
           boxShadow: "none",
         }}
       >
-        <Typography>{message.text}</Typography>
+        <Typography>{isCurrentUserMessage ? "You: " : message.name + ": "}{message.text}</Typography>
       </Paper>
     </Box>
   );
