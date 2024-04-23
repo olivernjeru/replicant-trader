@@ -1,14 +1,35 @@
 import React, { useRef, useEffect } from 'react';
 import { createChart } from 'lightweight-charts';
+import { Box, IconButton, InputAdornment, TextField } from '@mui/material';
+import Container from "@mui/material/Container";
+import SearchIcon from '@mui/icons-material/Search';
 
 export default function HistoricalPerformanceTracker() {
+    const [input, setInput] = React.useState("");
+
+    const [searchTerm, setSearchTerm] = React.useState("");
+    const handleChange = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const handleSend = () => {
+        if (input.trim() !== "") {
+          console.log(input);
+          setInput("");
+        }
+      };
+
+    const handleInputChange = (event) => {
+        setInput(event.target.value);
+      };
+
     const chartContainerRef = useRef(null);
 
     useEffect(() => {
         if (chartContainerRef.current) {
             const chart = createChart(chartContainerRef.current, {
                 width: 600,
-                height: 270,
+                height: 230,
             });
             const lineSeries = chart.addLineSeries();
             lineSeries.setData([
@@ -167,7 +188,42 @@ export default function HistoricalPerformanceTracker() {
     }, []);
 
     return (
-        <div ref={chartContainerRef} /> // This element will hold the chart
+        <Container>
+            <Box>
+                <TextField
+                    label="Search"
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                    sx={{ mb: 1 }}
+                    value={input}
+                    onChange={handleInputChange}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton aria-label="search">
+                                    <SearchIcon onClick={handleSend} />
+                                </IconButton>
+                            </InputAdornment>
+                        ),
+                        sx: {
+                            '& .MuiOutlinedInput-notchedOutline': {
+                                borderColor: 'white', // Change outline color
+                            },
+                            '& input': {
+                                color: 'white', // Change input text color
+                            }
+                        }
+                    }}
+                    InputLabelProps={{
+                        style: {
+                            color: 'white', // Change label text color
+                        }
+                    }}
+                />
+            </Box>
+            <div ref={chartContainerRef} />
+        </Container>
     );
 
 }

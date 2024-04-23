@@ -14,24 +14,19 @@
 .bottom {
     display: flex;
     justify-content: space-between;
-    height: 35vh;
 }
 
 .top {
     /* background-color: red; */
-    margin-top: 64px;
+    /* margin-top: 24px; */
+    margin-bottom: 1.5%;
 }
 
 .bottom {
     /* background-color: green; */
-    margin-top: 1%;
 }
 
 .fit,
 .hp {
-    margin-top: 1%;
-}
-
-.hp {
-    padding-right: 1.5%;
+    margin-top: 20px;
 }

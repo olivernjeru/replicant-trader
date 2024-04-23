@@ -197,7 +197,7 @@ export default function QuotesTable() {
             >
                 {[0, 1].map((index) => (
                     <TabPanel key={index} value={value} index={index} dir={theme.direction}>
-                        <TableContainer component={Paper} sx={{ maxHeight: 150, overflowY: 'auto' }}>
+                        <TableContainer component={Paper} sx={{ maxHeight: 145, overflowY: 'auto' }}>
                             <Table size="small" aria-label="a dense table">
                                 <TableHead>
                                     <TableRow>
