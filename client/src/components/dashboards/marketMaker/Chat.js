@@ -6,13 +6,15 @@ import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { auth, firestoredb } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit } from "firebase/firestore";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function Chat() {
   const [messages, setMessages] = React.useState([]);
   const [message, setMessage] = React.useState("");
   const chatContainerRef = React.useRef(null);
   const [error, setError] = React.useState(null);
+  const [user] = useAuthState(auth);
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -50,14 +52,18 @@ export default function Chat() {
     const fetchMessages = async () => {
       const messagesQuery = query(
         collection(firestoredb, "messages"),
-        orderBy("createdAt")
+        orderBy("createdAt", "desc"),
+        // limit(250)
       );
-      const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      const unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
         const fetchedMessages = [];
-        snapshot.forEach((doc) => {
-          fetchedMessages.push({ id: doc.id, ...doc.data() });
+        QuerySnapshot.forEach((doc) => {
+          fetchedMessages.push({ ...doc.data(), id: doc.id });
         });
-        setMessages(fetchedMessages);
+        const sortedMessages = fetchedMessages.sort(
+          (a, b) => a.createdAt - b.createdAt
+        );
+        setMessages(sortedMessages);
 
         // Scroll to the bottom of the chat area if chatContainerRef.current exists
         if (chatContainerRef.current) {
@@ -224,13 +230,14 @@ export default function Chat() {
 };
 
 const Message = ({ message }) => {
-  const isClient = message.sender === "client";
+  const [user] = useAuthState(auth);
+  const isCurrentUserMessage = message.uid === user?.uid;
 
   return (
     <Box
       sx={{
         display: "flex",
-        justifyContent: isClient ? "flex-start" : "flex-end",
+        justifyContent: isCurrentUserMessage ? "flex-end" : "flex-start",
         mb: 1,
         paddingTop: 0,
       }}
@@ -239,7 +246,7 @@ const Message = ({ message }) => {
         sx={{
           backgroundColor: "transparent",
           padding: 0,
-          boxShadow: "none", // Remove the shadow
+          boxShadow: "none",
         }}
       >
         <Typography>{message.text}</Typography>
