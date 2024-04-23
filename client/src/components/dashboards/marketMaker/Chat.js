@@ -5,24 +5,39 @@ import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-
-const messages = [
-  { id: 1, text: "Hi there!", sender: "client" },
-  { id: 2, text: "Hello!", sender: "user" },
-];
+import { auth, firestoredb } from "../../../firebase";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, getDocs } from "firebase/firestore";
 
 export default function Chat() {
-  const [input, setInput] = React.useState("");
+  const [messages, setMessages] = React.useState([]);
+  const [message, setMessage] = React.useState("");
+  const chatContainerRef = React.useRef(null);
+  const [error, setError] = React.useState(null);
 
-  const handleSend = () => {
-    if (input.trim() !== "") {
-      console.log(input);
-      setInput("");
+  const sendMessage = async (event) => {
+    event.preventDefault();
+    if (message.trim() === "") {
+      setError("Enter valid message");
+      setTimeout(() => setError(null), 1500); // Remove error after 3 seconds
+      return;
+    }
+    const { uid, email } = auth.currentUser;
+    try {
+      await addDoc(collection(firestoredb, "messages"), {
+        text: message,
+        name: email,
+        createdAt: serverTimestamp(),
+        uid,
+      });
+      setMessage("");
+    } catch (error) {
+      setError("Failed to send message"); // Handle any errors from Firestore
+      setTimeout(() => setError(null), 1500); // Remove error after 3 seconds
     }
   };
 
-  const handleInputChange = (event) => {
-    setInput(event.target.value);
+  const handleMessageChange = (event) => {
+    setMessage(event.target.value);
   };
 
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -31,9 +46,41 @@ export default function Chat() {
     setSearchTerm(event.target.value);
   };
 
+  React.useEffect(() => {
+    const fetchMessages = async () => {
+      const messagesQuery = query(
+        collection(firestoredb, "messages"),
+        orderBy("createdAt")
+      );
+      const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+        const fetchedMessages = [];
+        snapshot.forEach((doc) => {
+          fetchedMessages.push({ id: doc.id, ...doc.data() });
+        });
+        setMessages(fetchedMessages);
+
+        // Scroll to the bottom of the chat area if chatContainerRef.current exists
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop =
+            chatContainerRef.current.scrollHeight;
+        }
+      });
+      return unsubscribe;
+    };
+    fetchMessages();
+  }, []);
+
+  // Scroll to the bottom of the chat container when messages are updated
+  React.useEffect(() => {
+    // Scroll to the bottom of the chat area if chatContainerRef.current exists
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
     <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240', ml: 3 }}>
-      <Box sx={{ ml: -3, padding: 0}}>
+      <Box sx={{ ml: -3, padding: 0 }}>
         <TextField
           label="Search"
           variant="outlined"
@@ -81,7 +128,8 @@ export default function Chat() {
           display: "flex",
           flexDirection: "column",
           padding: '1%',
-          mr: -3
+          mr: -3,
+          overflowY: 'auto' // Enable vertical scrolling
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: 1 }}>
@@ -89,19 +137,62 @@ export default function Chat() {
           <Typography> JANE DOE </Typography>
           <Typography> 543 789 8890 </Typography>
         </Box>
-        <Divider sx={{ backgroundColor: 'white' }}/>
-        <Box sx={{ flexGrow: 1 }}>
+        <Divider sx={{ backgroundColor: 'white' }} />
+        <Box
+          ref={chatContainerRef}
+          sx={{
+            flexGrow: 1,
+            overflowY: 'scroll',
+            paddingRight: 2,
+            maxHeight: 'calc(40vh - 110px)',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#D9D9D9',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#112240',
+            },
+          }}
+        >
           {messages.map((message) => (
             <Message key={message.id} message={message} />
           ))}
         </Box>
+        {error && (
+          <Paper
+            sx={{
+              position: 'absolute',
+              bottom: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: '#f44336',
+              color: '#fff',
+              padding: '10px',
+              borderRadius: '8px',
+              zIndex: '999',
+              transition: 'opacity 0.5s', // Add transition for smooth appearance
+              opacity: 1, // Initially set to visible
+            }}
+          >
+            {error}
+          </Paper>
+        )}
+
         <TextField
           label="Type a message"
           fullWidth
           size="small"
           variant="outlined"
-          value={input}
-          onChange={handleInputChange}
+          value={message}
+          onChange={handleMessageChange}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              sendMessage(event);
+            }
+          }}
           sx={{ mb: 1 }}
           InputProps={{
             sx: {
@@ -123,7 +214,7 @@ export default function Chat() {
           fullWidth
           color="primary"
           variant="contained"
-          onClick={handleSend}
+          onClick={sendMessage}
         >
           SEND MESSAGE
         </Button>
