@@ -51,7 +51,7 @@ export default function LoggedIn() {
           {currentTime}
         </div>
         <div className="right">
-          <Tooltip title="Account settings">
+          <Tooltip title="Account settings" sx={{ color: 'white' }}>
             <IconButton
               onClick={handleClick}
               size="small"
@@ -59,7 +59,7 @@ export default function LoggedIn() {
               aria-haspopup="true"
               aria-expanded={open ? 'true' : undefined}
             >
-              <Avatar sx={{ width: 32, height: 32 }} />
+              {user?.email} <Avatar sx={{ ml: 2, width: 32, height: 32 }} />
             </IconButton>
           </Tooltip>
         </div>
@@ -104,7 +104,7 @@ export default function LoggedIn() {
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
-            <SettingsIcon sx={{ marginRight: '8px' }} /> {user?.email}
+            <SettingsIcon sx={{ marginRight: '11px', marginLeft: '-5px' }} /> Account Settings
           </MenuItem>
           <Divider />
           <MenuItem onClick={() => signOut()}>
