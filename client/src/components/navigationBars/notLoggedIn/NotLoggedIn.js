@@ -9,7 +9,7 @@ export default function NotLoggedIn() {
     <AppBar position="static">
       <Toolbar>
         <div className="left">
-          <Link href="/">Trade</Link>
+          <Link href="/">Replicant Trader</Link>
         </div>
         <div className="center">
           <Link href="">About</Link>

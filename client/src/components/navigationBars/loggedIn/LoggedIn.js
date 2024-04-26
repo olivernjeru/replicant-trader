@@ -51,7 +51,7 @@ export default function LoggedIn() {
     <AppBar>
       <Toolbar>
         <div className="left">
-          <Link href="/">Trade</Link>
+          <Link href="/">Replicant Trader</Link>
           {currentTime}
         </div>
         <div className="right">
