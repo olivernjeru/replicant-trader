@@ -2,8 +2,6 @@ import React from 'react';
 import './LandingPage.css';
 import MainLayout from '../layout/NotLoggedInMainLayout';
 
-
-
 export default function LandingPage() {
   return (
     <div className="LandingPage">
