@@ -201,8 +201,8 @@ export default function HistoricalPerformanceTracker() {
                     InputProps={{
                         endAdornment: (
                             <InputAdornment position="end">
-                                <IconButton aria-label="search">
-                                    <SearchIcon onClick={handleSend} />
+                                <IconButton aria-label="search" onClick={handleSend}>
+                                    <SearchIcon />
                                 </IconButton>
                             </InputAdornment>
                         ),
