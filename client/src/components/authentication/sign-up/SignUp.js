@@ -7,11 +7,12 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, firestoredb } from '../../../firebase';
+import { auth, firestoredb, storage } from '../../../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import './SignUp.css';
 import { query, collection, where, getDocs } from 'firebase/firestore';
+import { ref, uploadBytes } from 'firebase/storage';
 
 const defaultTheme = createTheme({
   components: {
@@ -48,7 +49,8 @@ export default function SignUp() {
     tradingNo: '',
     kraPin: '',
     nationalId: '',
-    username: '', // Added username field
+    username: '',
+    picture: null,
   });
 
   const [errors, setErrors] = useState({
@@ -60,17 +62,16 @@ export default function SignUp() {
     tradingNo: '',
     kraPin: '',
     nationalId: '',
-    username: '', // Added username field
+    username: '',
   });
 
   const handleInputChange = (event) => {
-    const { name, value } = event.target;
+    const { name, value, files } = event.target;
     setUserInput({
       ...userInput,
-      [name]: value,
+      [name]: name === 'picture' ? files[0] : value, // If it's a picture input, set it to the file object
     });
 
-    // Validate input on change
     validateInput(name, value);
   };
 
@@ -204,7 +205,7 @@ export default function SignUp() {
         kraPin: userInput.kraPin,
         nationalId: userInput.nationalId,
         createdAt: new Date(),
-        username: userInput.username, // Add username to Firestore document
+        username: userInput.username,
       });
 
       // Check if the user is a client or market maker based on trading number
@@ -212,6 +213,12 @@ export default function SignUp() {
         navigate('/mm-dashboard');
       } else if (userInput.tradingNo.startsWith('C')) {
         navigate('/client');
+      }
+
+      // Upload picture to Firebase Storage
+      if (userInput.picture) {
+        const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
+        await uploadBytes(pictureRef, userInput.picture);
       }
     } catch (error) {
       // Handle authentication errors
@@ -363,17 +370,33 @@ export default function SignUp() {
               />
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="username"
-                label="Username"
-                value={userInput.username}
-                onChange={handleInputChange}
-                error={!!errors.username}
-                helperText={errors.username}
-              />
+              <Box sx={{ flexGrow: 1 }}>
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="username"
+                  label="Username"
+                  value={userInput.username}
+                  onChange={handleInputChange}
+                  error={!!errors.username}
+                  helperText={errors.username}
+                />
+                <input
+                  accept="image/*"
+                  id="contained-button-file"
+                  multiple
+                  type="file"
+                  name="picture"
+                  onChange={handleInputChange}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="contained-button-file">
+                  <Button variant="contained" component="span" fullWidth>
+                    Upload Picture
+                  </Button>
+                </label>
+              </Box>
             </Box>
             <Button
               type="submit"
