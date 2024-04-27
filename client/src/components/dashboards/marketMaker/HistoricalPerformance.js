@@ -26,7 +26,7 @@ export default function HistoricalPerformanceTracker() {
 
                 const today = new Date();
                 const endDate = today.toISOString().split('T')[0];
-                const startDate = new Date(today.getTime() - (1000 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]; // Adjust the duration as needed
+                const startDate = new Date(today.getTime() - (732 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]; // Adjust the duration as needed
 
                 const response = await rest.stocks.aggregates(tickerSymbol, 1, 'day', startDate, endDate); // Use dynamic ticker symbol
                 const fetchedData = response.results.map(result => ({
