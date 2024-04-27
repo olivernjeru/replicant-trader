@@ -7,9 +7,11 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../../firebase';
-import './SignUp.css'
+import { auth, firestoredb } from '../../../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
+import './SignUp.css';
+import { query, collection, where, getDocs } from 'firebase/firestore';
 
 const defaultTheme = createTheme({
   components: {
@@ -31,84 +33,210 @@ const defaultTheme = createTheme({
   },
 });
 
-
 export default function SignUp() {
   const navigate = useNavigate();
 
   // Validate if username is a correct email address
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [userInput, setUserInput] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    tradingNo: '',
+    kraPin: '',
+    nationalId: '',
+    username: '', // Added username field
+  });
 
-  const signUp = (event) => {
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    tradingNo: '',
+    kraPin: '',
+    nationalId: '',
+    username: '', // Added username field
+  });
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setUserInput({
+      ...userInput,
+      [name]: value,
+    });
+
+    // Validate input on change
+    validateInput(name, value);
+  };
+
+  const validateInput = (name, value) => {
+    let errorMessage = '';
+
+    switch (name) {
+      case 'email':
+        errorMessage = emailRegex.test(value)
+          ? ''
+          : 'Please enter a valid email address.';
+        break;
+      case 'password':
+        errorMessage = isValidPassword(value)
+          ? ''
+          : 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
+        break;
+      case 'confirmPassword':
+        errorMessage =
+          value === userInput.password ? '' : 'Passwords do not match.';
+        break;
+      case 'firstName':
+        errorMessage = value ? '' : 'Please enter your first name.';
+        break;
+      case 'lastName':
+        errorMessage = value ? '' : 'Please enter your last name.';
+        break;
+      case 'tradingNo':
+        errorMessage =
+          value && (value.startsWith('MM') || value.startsWith('C')) && value.length >= 10
+            ? ''
+            : 'Trading number must start with MM or C and have at least 10 characters.';
+        break;
+      case 'kraPin':
+        errorMessage =
+          value && /^[A-Z\d]{11}$/.test(value)
+            ? ''
+            : 'Please enter a valid KRA PIN.';
+        break;
+      case 'nationalId':
+        errorMessage =
+          value && /^\d{1,8}$/.test(value)
+            ? ''
+            : 'Please enter a valid national identification number.';
+        break;
+      case 'username':
+        errorMessage =
+          isValidUsername(value)
+            ? ''
+            : 'Username must be 6–30 characters long and can contain letters, numbers, or periods only. It cannot contain special characters or more than one period in a row.';
+        break;
+      default:
+        break;
+    }
+
+    setErrors({
+      ...errors,
+      [name]: errorMessage,
+    });
+  };
+
+  const signUp = async (event) => {
     event.preventDefault();
 
-    // Form validation
-    if (!email) {
-      setError('Enter your email.');
-      return;
-    }
-    else if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    else if (!password) {
-      setError('Enter your password.');
-      return;
-    }
-    else if (!confirmPassword) {
-      setError('Enter the password again to confirm.');
-      return;
-    }
-    else if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+    // Check if there are any validation errors
+    if (Object.values(errors).some((error) => error !== '')) {
       return;
     }
 
-    // Clear previous error messages
-    setError('');
+    try {
+      // Check if the email already exists
+      const emailQuery = query(collection(firestoredb, 'user-details'), where('email', '==', userInput.email));
+      const emailSnapshot = await getDocs(emailQuery);
 
-    if (password === confirmPassword) {
-      createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          const user = userCredential.user;
-          console.log(user);
-          navigate("/submit-details");
-        })
-        .catch((error) => {
-          const errorMessage = error.message;
-          const errorCode = error.code;
+      if (!emailSnapshot.empty) {
+        setErrors((prevState) => ({ ...prevState, email: 'Email address already exists.' }));
+        return;
+      }
 
-          setError(true);
+      // Check if the username already exists
+      const usernameQuery = query(collection(firestoredb, 'user-details'), where('username', '==', userInput.username));
+      const usernameSnapshot = await getDocs(usernameQuery);
 
-          switch (errorCode) {
-            case "auth/weak-password":
-              setErrorMessage("The password is too weak.");
-              break;
-            case "auth/missing-password":
-              setErrorMessage("Please enter a password.");
-              break;
-            case "auth/email-already-in-use":
-              setErrorMessage(
-                "This email address is already in use by another account."
-              );
-              break;
-            case "auth/invalid-email":
-              setErrorMessage("This email address is invalid.");
-              break;
-            case "auth/operation-not-allowed":
-              setErrorMessage("Email/password accounts are not enabled.");
-              break;
-            default:
-              setErrorMessage(errorMessage);
-              break;
-          }
-        })
+      if (!usernameSnapshot.empty) {
+        setErrors((prevState) => ({ ...prevState, username: 'Username already exists.' }));
+        return;
+      }
+
+      // Check if the KRA PIN already exists
+      const kraPinQuery = query(collection(firestoredb, 'user-details'), where('kraPin', '==', userInput.kraPin));
+      const kraPinSnapshot = await getDocs(kraPinQuery);
+
+      if (!kraPinSnapshot.empty) {
+        setErrors((prevState) => ({ ...prevState, kraPin: 'KRA PIN already exists.' }));
+        return;
+      }
+
+      // Check if the National Identification Number already exists
+      const nationalIdQuery = query(collection(firestoredb, 'user-details'), where('nationalId', '==', userInput.nationalId));
+      const nationalIdSnapshot = await getDocs(nationalIdQuery);
+
+      if (!nationalIdSnapshot.empty) {
+        setErrors((prevState) => ({ ...prevState, nationalId: 'National Identification Number already exists.' }));
+        return;
+      }
+
+      // Check if the Trading Number already exists
+      const tradingNoQuery = query(collection(firestoredb, 'user-details'), where('tradingNo', '==', userInput.tradingNo));
+      const tradingNoSnapshot = await getDocs(tradingNoQuery);
+
+      if (!tradingNoSnapshot.empty) {
+        setErrors((prevState) => ({ ...prevState, tradingNo: 'Trading Number already exists.' }));
+        return;
+      }
+
+      // If the email, username, KRA PIN, National Identification Number, and Trading Number do not exist, proceed with user registration
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        userInput.email,
+        userInput.password
+      );
+
+      // Extract user from userCredential
+      const user = userCredential.user;
+
+      // Store user details in Firestore
+      const userRef = doc(firestoredb, 'user-details', user.uid);
+      await setDoc(userRef, {
+        displayName: `${userInput.firstName} ${userInput.lastName}`,
+        tradingNo: userInput.tradingNo,
+        kraPin: userInput.kraPin,
+        nationalId: userInput.nationalId,
+        createdAt: new Date(),
+        username: userInput.username, // Add username to Firestore document
+      });
+
+      // Check if the user is a client or market maker based on trading number
+      if (userInput.tradingNo.startsWith('MM')) {
+        navigate('/mm-dashboard');
+      } else if (userInput.tradingNo.startsWith('C')) {
+        navigate('/client');
+      }
+    } catch (error) {
+      // Handle authentication errors
+      if (error.code === 'auth/email-already-in-use') {
+        setErrors((prevState) => ({ ...prevState, email: 'Email address is already in use.' }));
+      } else if (error.code === '400') {
+        // Handle bad request error
+        console.error('Bad Request:', error.message);
+        setErrors((prevState) => ({ ...prevState, general: 'An error occurred. Please try again later.' }));
+      } else {
+        console.error(error);
+      }
     }
+  };
+
+  // Password validation function
+  const isValidPassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
+  // Username validation function
+  const isValidUsername = (username) => {
+    const usernameRegex = /^[a-zA-Z0-9.]{6,30}$/;
+    return usernameRegex.test(username) && !/[&=_\-' +\[\]<>]/.test(username) && !/\.\./.test(username) && !/^\.|\.$/.test(username);
   };
 
   return (
@@ -131,43 +259,122 @@ export default function SignUp() {
             CREATE AN ACCOUNT
           </Typography>
           <Box component="form" onSubmit={signUp} noValidate sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="email-address"
-              label="Email Address"
-              type="email"
-              id="email-address"
-              autoComplete="email-address"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirm-password"
-              label="Confirm Password"
-              type="password"
-              id="confirm-password"
-              autoComplete="confirm-password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-            {error && <Typography color="error" variant="body2">{error}</Typography>}
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="firstName"
+                label="First Name"
+                autoFocus
+                value={userInput.firstName}
+                onChange={handleInputChange}
+                error={!!errors.firstName}
+                helperText={errors.firstName}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="lastName"
+                label="Last Name"
+                value={userInput.lastName}
+                onChange={handleInputChange}
+                error={!!errors.lastName}
+                helperText={errors.lastName}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="email"
+                label="Email Address"
+                type="email"
+                autoComplete="email"
+                value={userInput.email}
+                onChange={handleInputChange}
+                error={!!errors.email}
+                helperText={errors.email}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="Password"
+                type="password"
+                autoComplete="new-password"
+                value={userInput.password}
+                onChange={handleInputChange}
+                error={!!errors.password}
+                helperText={errors.password}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="confirmPassword"
+                label="Confirm Password"
+                type="password"
+                autoComplete="new-password"
+                value={userInput.confirmPassword}
+                onChange={handleInputChange}
+                error={!!errors.confirmPassword}
+                helperText={errors.confirmPassword}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="tradingNo"
+                label="Trading Number"
+                value={userInput.tradingNo}
+                onChange={handleInputChange}
+                error={!!errors.tradingNo}
+                helperText={errors.tradingNo}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="kraPin"
+                label="KRA PIN"
+                value={userInput.kraPin}
+                onChange={handleInputChange}
+                error={!!errors.kraPin}
+                helperText={errors.kraPin}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="nationalId"
+                label="National Identification Number"
+                value={userInput.nationalId}
+                onChange={handleInputChange}
+                error={!!errors.nationalId}
+                helperText={errors.nationalId}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="username"
+                label="Username"
+                value={userInput.username}
+                onChange={handleInputChange}
+                error={!!errors.username}
+                helperText={errors.username}
+              />
+            </Box>
             <Button
               type="submit"
               fullWidth
