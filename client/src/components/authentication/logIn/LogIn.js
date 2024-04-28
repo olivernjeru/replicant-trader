@@ -10,11 +10,13 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import './LogIn.css'
+import './LogIn.css';
 import { useState } from 'react';
-import { auth } from '../../../firebase';
+import { auth, firestoredb, storage } from '../../../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { ref, getDownloadURL } from 'firebase/storage';
 
 const defaultTheme = createTheme({
   components: {
@@ -36,38 +38,68 @@ const defaultTheme = createTheme({
   },
 });
 
-
 export default function LogIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
-  const logIn = (event) => {
+  const logIn = async (event) => {
     event.preventDefault();
 
-    // Form validation
-    if (!email) {
-      setError('Enter your email.');
-      return;
-    }
-    else if (!password) {
-      setError('Enter your password.');
-      return;
-    }
-
     // Clear previous error messages
-    setError('');
+    setEmailError('');
+    setPasswordError('');
 
-    signInWithEmailAndPassword(auth, email, password)
-      .then(() => {
-        console.log('Login Successful!');
-        navigate('/mm-dashboard')
-      })
-      .catch((error) => {
-        console.log(error);
-      })
+    // Form validation
+    if (!email.trim()) {
+      setEmailError('Enter your email.');
+      return;
+    } else if (!isValidEmail(email.trim())) {
+      setEmailError('Enter a valid email address.');
+      return;
+    } else if (!password.trim()) {
+      setPasswordError('Enter your password.');
+      return;
+    }
 
+    try {
+      // Authenticate user with Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Lookup user details in Firestore
+      const userDoc = await getDoc(doc(firestoredb, 'user-details', user.uid));
+      const userData = userDoc.data();
+
+      // Lookup profile picture in Firebase Storage
+      const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
+      const pictureUrl = await getDownloadURL(pictureRef);
+
+      // Combine user data with profile picture URL
+      const userInfo = { ...userData, pictureUrl };
+
+      // Redirect based on trading number prefix
+      if (userInfo.tradingNo.startsWith('MM')) {
+        navigate('/mm-dashboard');
+      } else if (userInfo.tradingNo.startsWith('C')) {
+        navigate('/client');
+      }
+    } catch (error) {
+      console.error('Login Error:', error.message);
+      if (error.code === 'auth/user-not-found') {
+        setEmailError('User not found.');
+      } else {
+        setPasswordError('Invalid email or password.');
+      }
+    }
+  };
+
+  // Email validation function
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   return (
@@ -101,6 +133,8 @@ export default function LogIn() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoFocus
+              error={!!emailError}
+              helperText={emailError}
             />
             <TextField
               margin="normal"
@@ -113,12 +147,13 @@ export default function LogIn() {
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              error={!!passwordError}
+              helperText={passwordError}
             />
             <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
             />
-            {error && <Typography color="error" variant="body2">{error}</Typography>}
             <Button
               type="submit"
               fullWidth
