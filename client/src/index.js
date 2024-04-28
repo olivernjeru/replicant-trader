@@ -10,6 +10,7 @@ import SubmitDetailsPage from './pages/SubmitDetailsPage';
 import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import PrivateRoutes from './components/authentication/privateRoutes/PrivateRoutes';
+import ReversePrivateRoutes from './components/authentication/reversePrivateRoutes/ReversePrivateRoutes';
 
 const container = document.getElementById('root');
 const root = createRoot(container);
@@ -17,11 +18,13 @@ const root = createRoot(container);
 root.render(
   <Router>
     <Routes>
-      <Route path="/" element={<App />} />
-      <Route path="login" element={<LogInPage />} />
-      <Route path="reset-password" element={<ResetPasswordPage />} />
-      <Route path="sign-up" element={<SignUpPage />} />
-      <Route path="submit-details" element={<SubmitDetailsPage />} />
+      <Route element={<ReversePrivateRoutes />}>
+        <Route path="/" element={<App />} />
+        <Route path="login" element={<LogInPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
+        <Route path="sign-up" element={<SignUpPage />} />
+        <Route path="submit-details" element={<SubmitDetailsPage />} />
+      </Route>
       <Route element={<PrivateRoutes />}>
         <Route path='mm-dashboard' element={<MarketMakerDashboardPage />} />
         <Route path='client' element={<ClientDashboardPage />} />
