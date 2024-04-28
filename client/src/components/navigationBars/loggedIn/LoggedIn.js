@@ -24,8 +24,14 @@ export default function LoggedIn() {
   const navigate = useNavigate();
 
   const signOut = () => {
-    auth.signOut();
-    navigate('/');
+    auth.signOut()
+      .then(() => {
+        // After successful sign out, navigate to "/"
+        navigate('/');
+      })
+      .catch((error) => {
+        console.error('Error signing out:', error);
+      });
   };
 
   const [user] = useAuthState(auth);
@@ -97,7 +103,6 @@ export default function LoggedIn() {
             </IconButton>
           </Tooltip>
         </div>
-
         <Menu
           anchorEl={anchorEl}
           id="account-menu"
@@ -133,16 +138,15 @@ export default function LoggedIn() {
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          {displayName && ( // Check if displayName is available before rendering
-            <Typography
-              onClick={handleEmailClick} // Prevent the menu from closing when clicking the email
-              sx={{ pl: 2, pr: 2, pt: 0, pb: 1, cursor: 'default' }} // Set cursor to default
+          {displayName && (
+            <div
+              onClick={handleEmailClick}
+              style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 1, paddingBottom: 1, cursor: 'default' }}
             >
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontSize: '22px' }}>
-                {displayName}
-              </Typography>
-              {user?.email}
-            </Typography>
+              <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{displayName}</span>
+              <br />
+              <span style={{ fontSize: '1rem' }}>{user?.email}</span>
+            </div>
           )}
           <Divider sx={{ backgroundColor: 'white' }} />
           <MenuItem onClick={handleClose} sx={{
