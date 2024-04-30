@@ -9,34 +9,15 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import './LogIn.css';
+import { ThemeProvider } from '@mui/material/styles';
 import { useState } from 'react';
 import { auth, firestoredb, storage } from '../../../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
-
-const defaultTheme = createTheme({
-  components: {
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiInputLabel-root, & .MuiOutlinedInput-input': {
-            color: 'white', // Change text color to white
-          },
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'white', // Change border color to white
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#1F63E8', // Change border color on hover to white
-          },
-        },
-      },
-    },
-  },
-});
+import defaultTheme from '../../styleUtilities/DefaultTheme';
+import './LogIn.css';
 
 export default function LogIn() {
   const navigate = useNavigate();

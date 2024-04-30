@@ -6,6 +6,7 @@
 Create your Firebase Project. Intialize Google Firebase Authentication, Firestore and Storage. Import your keys from your firebaseConfig Object in your Project Settings into a .env.local file stored in the client's root folder. Sign up for a PolygonIO account and create three Keys, FIT Key, HP Key and Client Key. Import these keys as well.
 
 You can have them like so:
+
 REACT_APP_FIREBASE_API_KEY=key
 REACT_APP_FIREBASE_AUTH_DOMAIN=domain
 REACT_APP_FIREBASE_DATABASE_URL=url

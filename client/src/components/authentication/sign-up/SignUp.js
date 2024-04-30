@@ -5,34 +5,15 @@ import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, firestoredb, storage } from '../../../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import './SignUp.css';
 import { query, collection, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
-
-const defaultTheme = createTheme({
-  components: {
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiInputLabel-root, & .MuiOutlinedInput-input': {
-            color: 'white', // Change text color to white
-          },
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'white', // Change border color to white
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#1F63E8', // Change border color on hover to white
-          },
-        },
-      },
-    },
-  },
-});
+import defaultTheme from '../../styleUtilities/DefaultTheme';
+import './SignUp.css';
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -243,7 +224,7 @@ export default function SignUp() {
   // Username validation function
   const isValidUsername = (username) => {
     const usernameRegex = /^[a-zA-Z0-9.]{6,30}$/;
-    return usernameRegex.test(username) && !/[&=_\-' +\[\]<>]/.test(username) && !/\.\./.test(username) && !/^\.|\.$/.test(username);
+    return usernameRegex.test(username) && !/[&=_\-' +[\]<>]/.test(username) && !/\.\./.test(username) && !/^\.|\.$/.test(username);
   };
 
   return (
