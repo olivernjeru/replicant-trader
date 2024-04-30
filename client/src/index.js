@@ -1,16 +1,15 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
 import App from './App';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LogInPage from './pages/LogInPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SignUpPage from './pages/SignUpPage';
-import SubmitDetailsPage from './pages/SubmitDetailsPage';
 import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import PrivateRoutes from './components/authentication/privateRoutes/PrivateRoutes';
 import ReversePrivateRoutes from './components/authentication/reversePrivateRoutes/ReversePrivateRoutes';
+import './index.css';
 
 const container = document.getElementById('root');
 const root = createRoot(container);
@@ -23,7 +22,6 @@ root.render(
         <Route path="login" element={<LogInPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="sign-up" element={<SignUpPage />} />
-        <Route path="submit-details" element={<SubmitDetailsPage />} />
       </Route>
       <Route element={<PrivateRoutes />}>
         <Route path='mm-dashboard' element={<MarketMakerDashboardPage />} />
