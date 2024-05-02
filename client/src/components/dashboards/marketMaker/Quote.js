@@ -54,6 +54,7 @@ export default function Quote() {
                 offer,
                 volume,
                 validFor,
+                status: 'active', // Set default status to 'active'
                 createdAt: new Date(),
             });
 
