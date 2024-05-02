@@ -9,6 +9,7 @@ import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import PrivateRoutes from './components/authentication/privateRoutes/PrivateRoutes';
 import ReversePrivateRoutes from './components/authentication/reversePrivateRoutes/ReversePrivateRoutes';
+import { AuthProvider } from './components/authentication/authContext/AuthContext';
 import './index.css';
 
 const container = document.getElementById('root');
@@ -16,17 +17,19 @@ const root = createRoot(container);
 
 root.render(
   <Router>
-    <Routes>
-      <Route element={<ReversePrivateRoutes />}>
-        <Route path="/" element={<App />} />
-        <Route path="login" element={<LogInPage />} />
-        <Route path="reset-password" element={<ResetPasswordPage />} />
-        <Route path="sign-up" element={<SignUpPage />} />
-      </Route>
-      <Route element={<PrivateRoutes />}>
-        <Route path='mm-dashboard' element={<MarketMakerDashboardPage />} />
-        <Route path='client' element={<ClientDashboardPage />} />
-      </Route>
-    </Routes>
+    <AuthProvider> {/* Wrap your routes with AuthProvider */}
+      <Routes>
+        <Route element={<ReversePrivateRoutes />}>
+          <Route path="/" element={<App />} />
+          <Route path="login" element={<LogInPage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
+          <Route path="sign-up" element={<SignUpPage />} />
+        </Route>
+        <Route element={<PrivateRoutes />}>
+          <Route path='mm-dashboard' element={<MarketMakerDashboardPage />} />
+          <Route path='client' element={<ClientDashboardPage />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   </Router>
 );

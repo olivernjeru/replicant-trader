@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
 import Avatar from '@mui/material/Avatar';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ProfileIcon from '@mui/icons-material/Person';
@@ -13,54 +12,15 @@ import Logout from '@mui/icons-material/Logout';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import { Link } from '@mui/material';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { useNavigate } from 'react-router-dom';
-import { auth, firestoredb, storage } from '../../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { ref, getDownloadURL } from 'firebase/storage';
 import TimeDisplay from '../../utilities/TimeDisplay';
+import { useAuth } from '../../authentication/authContext/AuthContext';
 import './LoggedIn.css';
 
 export default function LoggedIn() {
-  const navigate = useNavigate();
+  const { currentUser, userData, logout } = useAuth(); // Destructure currentUser and userData from useAuth
 
   const signOut = () => {
-    auth.signOut()
-      .then(() => {
-        // After successful sign out, navigate to "/"
-        navigate('/');
-      })
-      .catch((error) => {
-        console.error('Error signing out:', error);
-      });
-  };
-
-  const [user] = useAuthState(auth);
-  const [displayName, setDisplayName] = useState(null); // State to store the display name
-  const [profilePictureUrl, setProfilePictureUrl] = useState(null); // State to store profile picture URL
-
-  useEffect(() => {
-    lookUpUserInfo(); // Fetch user info when the component mounts
-  }, []);
-
-  const lookUpUserInfo = async () => {
-    try {
-      // Lookup user details in Firestore
-      const userDoc = await getDoc(doc(firestoredb, 'user-details', user.uid));
-      const userData = userDoc.data();
-      console.log(userData);
-
-      // Lookup profile picture in Firebase Storage
-      const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
-      const pictureUrl = await getDownloadURL(pictureRef);
-      console.log(pictureUrl);
-
-      // Update the state with the profile picture URL and display name
-      setProfilePictureUrl(pictureUrl);
-      setDisplayName(userData.displayName);
-    } catch (error) {
-      console.error('Error fetching user info:', error);
-    }
+    logout();
   };
 
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -91,7 +51,7 @@ export default function LoggedIn() {
               aria-haspopup="true"
               aria-expanded={open ? 'true' : undefined}
             >
-              <Avatar sx={{ width: 32, height: 32 }} src={profilePictureUrl} />
+              <Avatar sx={{ width: 32, height: 32 }} src={userData?.profilePictureUrl} />
             </IconButton>
           </Tooltip>
         </div>
@@ -130,14 +90,14 @@ export default function LoggedIn() {
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          {displayName && (
+          {userData && userData.displayName && (
             <div
               onClick={handleEmailClick}
               style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 1, paddingBottom: 1, cursor: 'default' }}
             >
-              <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{displayName}</span>
+              <span style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{userData.displayName}</span>
               <br />
-              <span style={{ fontSize: '1rem' }}>{user?.email}</span>
+              <span style={{ fontSize: '1rem' }}>{currentUser.email}</span>
             </div>
           )}
           <Divider sx={{ backgroundColor: 'white' }} />

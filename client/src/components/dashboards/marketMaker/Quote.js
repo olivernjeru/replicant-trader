@@ -2,32 +2,15 @@ import React, { useState } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import QuotesTable from './QuotesTable';
-import { getDatabase, ref, push } from "firebase/database";
-
-const defaultTheme = createTheme({
-    components: {
-        MuiTextField: {
-            styleOverrides: {
-                root: {
-                    '& .MuiInputLabel-root, & .MuiOutlinedInput-input': {
-                        color: 'white', // Change text color to white
-                    },
-                    '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'white', // Change border color to white
-                    },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#1F63E8', // Change border color on hover to white
-                    },
-                },
-            },
-        },
-    },
-});
+import { doc, addDoc, collection } from 'firebase/firestore';
+import { firestoredb } from '../../../firebase';
+import { useAuth } from '../../authentication/authContext/AuthContext';
+import defaultTheme from '../../styleUtilities/DefaultTheme';
 
 const initialState = {
     stockTicker: '',
@@ -39,14 +22,14 @@ const initialState = {
 
 export default function Quote() {
     const [formData, setFormData] = useState(initialState);
-    const db = getDatabase();
+    const { currentUser } = useAuth(); // Get the current authenticated user
 
     const handleFormChange = (event) => {
         const { name, value } = event.target;
         setFormData({ ...formData, [name]: value });
     };
 
-    const sendQuote = (event) => {
+    const sendQuote = async (event) => {
         event.preventDefault();
         const { stockTicker, bid, offer, volume, validFor } = formData;
 
@@ -56,28 +39,31 @@ export default function Quote() {
             return;
         }
 
-        // Additional validation (e.g., numeric values for bid, offer, volume)
-        // You can add your validation logic here
-
         // Clear previous error messages
         setFormData({ ...formData, error: '' });
 
-        // Generate a unique timestamp representing the current time
-        const currentTime = new Date().getTime();
+        try {
+            // Get reference to the document with the current user's ID as the document ID
+            const userDocRef = doc(collection(firestoredb, 'quotes'), currentUser.uid);
 
-        push(ref(db, `quotes/${currentTime}`), formData)
-            .then(() => {
-                console.log('Data Saved Successfully');
-                // Reset form fields after successful submission
-                setFormData(initialState);
-            })
-            .catch((error) => {
-                if (error.code === 'PERMISSION_DENIED') {
-                    setFormData({ ...formData, error: 'Permission denied. Check your database rules.' });
-                } else {
-                    setFormData({ ...formData, error: `An error occurred while saving data: ${error.message}` });
-                }
+            // Add a new subcollection with a timestamp as the document ID
+            const newSubCollectionRef = collection(userDocRef, 'quotesData');
+            await addDoc(newSubCollectionRef, {
+                stockTicker,
+                bid,
+                offer,
+                volume,
+                validFor,
+                createdAt: new Date(),
             });
+
+            console.log('Document written successfully');
+            // Reset form fields after successful submission
+            setFormData(initialState);
+        } catch (error) {
+            console.error('Error adding document: ', error);
+            setFormData({ ...formData, error: `An error occurred while saving data: ${error.message}` });
+        }
     };
 
     return (
