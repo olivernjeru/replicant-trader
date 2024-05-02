@@ -12,12 +12,13 @@ import Tooltip from '@mui/material/Tooltip';
 import Logout from '@mui/icons-material/Logout';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import { Link, Typography } from '@mui/material';
+import { Link } from '@mui/material';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useNavigate } from 'react-router-dom';
 import { auth, firestoredb, storage } from '../../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
+import TimeDisplay from '../../utilities/TimeDisplay';
 import './LoggedIn.css';
 
 export default function LoggedIn() {
@@ -62,15 +63,6 @@ export default function LoggedIn() {
     }
   };
 
-  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-
-    return () => clearInterval(intervalId); // Cleanup function to prevent memory leaks
-  }, []);
-
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -88,7 +80,7 @@ export default function LoggedIn() {
       <Toolbar>
         <div className="left">
           <Link href="/">Replicant Trader</Link>
-          {currentTime}
+          <TimeDisplay />
         </div>
         <div className="right">
           <Tooltip title="Account menu" sx={{ color: 'white' }}>
