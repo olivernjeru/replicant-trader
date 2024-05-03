@@ -42,7 +42,7 @@ export default function FinancialInstrumentTracker() {
     try {
       const today = new Date();
       const endDate = today.toISOString().split('T')[0];
-      const startDate = new Date(today.getTime() - (3 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      const startDate = new Date(today.getTime() - (1 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
 
       setStartDate(startDate);
       setEndDate(endDate);
