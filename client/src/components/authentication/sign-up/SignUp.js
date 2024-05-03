@@ -6,17 +6,14 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { ThemeProvider } from '@mui/material/styles';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, firestoredb, storage } from '../../../firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
+import { firestoredb } from '../../../firebase';
 import { query, collection, where, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes } from 'firebase/storage';
 import defaultTheme from '../../styleUtilities/DefaultTheme';
+import { useAuth } from '../authContext/AuthContext';
 import './SignUp.css';
 
 export default function SignUp() {
-  const navigate = useNavigate();
+  const { signup } = useAuth(); // Get the signup function from AuthContext
 
   // Validate if username is a correct email address
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -168,39 +165,10 @@ export default function SignUp() {
         return;
       }
 
-      // If the email, username, KRA PIN, National Identification Number, and Trading Number do not exist, proceed with user registration
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        userInput.email,
-        userInput.password
-      );
-
-      // Extract user from userCredential
-      const user = userCredential.user;
-
-      // Store user details in Firestore
-      const userRef = doc(firestoredb, 'user-details', user.uid);
-      await setDoc(userRef, {
-        displayName: `${userInput.firstName} ${userInput.lastName}`,
-        tradingNo: userInput.tradingNo,
-        kraPin: userInput.kraPin,
-        nationalId: userInput.nationalId,
-        createdAt: new Date(),
-        username: userInput.username,
-      });
-
-      // Check if the user is a client or market maker based on trading number
-      if (userInput.tradingNo.startsWith('MM')) {
-        navigate('/mm-dashboard');
-      } else if (userInput.tradingNo.startsWith('C')) {
-        navigate('/client');
-      }
-
-      // Upload picture to Firebase Storage
-      if (userInput.picture) {
-        const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
-        await uploadBytes(pictureRef, userInput.picture);
-      }
+      // If the email, username, KRA PIN, National Identification Number, and Trading Number exist, proceed with user registration
+      // Call the signup function from AuthContext
+      await signup(userInput.email, userInput.password, userInput);
+      // Navigate or perform any other action after successful signup
     } catch (error) {
       // Handle authentication errors
       if (error.code === 'auth/email-already-in-use') {
