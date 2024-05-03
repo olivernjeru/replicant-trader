@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, firestoredb, storage } from '../../../firebase'; import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, firestoredb, storage } from '../../../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
@@ -97,9 +99,36 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Function to log in an existing user
-  const login = (email, password) => {
-    return auth.signInWithEmailAndPassword(email, password);
-  };
+const login = async (email, password) => {
+  try {
+    // Authenticate user with Firebase Authentication
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Lookup user details in Firestore
+    const userDoc = await getDoc(doc(firestoredb, 'user-details', user.uid));
+    const userData = userDoc.data();
+
+    // Lookup profile picture in Firebase Storage
+    const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
+    const pictureUrl = await getDownloadURL(pictureRef);
+
+    // Combine user data with profile picture URL
+    const userInfo = { ...userData, pictureUrl };
+
+    // Redirect based on trading number prefix
+    if (userInfo.tradingNo.startsWith('MM')) {
+      navigate('/mm-dashboard');
+    } else if (userInfo.tradingNo.startsWith('C')) {
+      navigate('/client');
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Login Error:', error.message);
+    throw error; // Re-throw the error to handle it in the component
+  }
+};
 
   // Function to log out the current user
   const logout = () => {

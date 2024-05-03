@@ -11,16 +11,12 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { ThemeProvider } from '@mui/material/styles';
 import { useState } from 'react';
-import { auth, firestoredb, storage } from '../../../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { ref, getDownloadURL } from 'firebase/storage';
 import defaultTheme from '../../styleUtilities/DefaultTheme';
+import { useAuth } from '../authContext/AuthContext';
 import './LogIn.css';
 
 export default function LogIn() {
-  const navigate = useNavigate();
+  const { login } = useAuth(); // Access the login function from the authentication context
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -46,27 +42,8 @@ export default function LogIn() {
     }
 
     try {
-      // Authenticate user with Firebase Authentication
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Lookup user details in Firestore
-      const userDoc = await getDoc(doc(firestoredb, 'user-details', user.uid));
-      const userData = userDoc.data();
-
-      // Lookup profile picture in Firebase Storage
-      const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
-      const pictureUrl = await getDownloadURL(pictureRef);
-
-      // Combine user data with profile picture URL
-      const userInfo = { ...userData, pictureUrl };
-
-      // Redirect based on trading number prefix
-      if (userInfo.tradingNo.startsWith('MM')) {
-        navigate('/mm-dashboard');
-      } else if (userInfo.tradingNo.startsWith('C')) {
-        navigate('/client');
-      }
+      // Call the login function from the authentication context
+      await login(email, password);
     } catch (error) {
       console.error('Login Error:', error.message);
       if (error.code === 'auth/user-not-found') {
