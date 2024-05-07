@@ -17,9 +17,9 @@ function createData(equity, bond, fx, commodity) {
 
 const rows = [
   createData('Ticker', 'REFPRICE', '%CHG', 'TYPE'),
-  createData('AMZN', '', '-0.13%', 'EQUITY'),
-  createData('TSLA', '', '-12.5%', 'EQUITY'),
-  createData('AAPL', '', '+1.4%', 'EQUITY'),
+  createData('AMZN', '', '', 'EQUITY'),
+  createData('TSLA', '', '', 'EQUITY'),
+  createData('AAPL', '', '', 'EQUITY'),
 ];
 
 const CACHE_DURATION = 30000; // 30 seconds
@@ -27,6 +27,7 @@ const key = process.env.REACT_APP_POLYGONIO_MM_FIT_KEY;
 
 export default function FinancialInstrumentTracker() {
   const [prices, setPrices] = useState({}); // State for all fetched prices
+  const [afterHoursPrices, setAfterHoursPrices] = useState({}); // State for after-hours prices
   const [startDate, setStartDate] = useState(''); // State for start date
   const [endDate, setEndDate] = useState(''); // State for end date
   const [isLoading, setIsLoading] = useState(true); // State for loading indicator
@@ -51,16 +52,21 @@ export default function FinancialInstrumentTracker() {
       if (isCached) return;
 
       const allPromises = tickers.map((ticker) =>
-        rest.stocks.aggregates(ticker, 1, 'day', startDate, endDate)
+        rest.stocks.dailyOpenClose(ticker, startDate)
       );
 
       const responses = await Promise.all(allPromises);
+      console.log(responses);
 
       const fetchedPrices = {};
+      const fetchedAfterHoursPrices = {};
       responses.forEach((response) => {
-        fetchedPrices[response.ticker] = response.results[0].c;
+        fetchedPrices[response.symbol] = response.close; // Set close price to the corresponding ticker symbol
+        fetchedAfterHoursPrices[response.symbol] = response.afterHours; // Set after-hours price to the corresponding ticker symbol
       });
       setPrices(fetchedPrices);
+      setAfterHoursPrices(fetchedAfterHoursPrices);
+
       setIsLoading(false);
     } catch (error) {
       console.error('An error occurred while fetching data:', error);
@@ -89,7 +95,7 @@ export default function FinancialInstrumentTracker() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
+            {rows.map((row, index) => (
               <TableRow key={row.equity}>
                 <TableCell component="th" scope="row">
                   {row.equity}
@@ -105,14 +111,24 @@ export default function FinancialInstrumentTracker() {
                     )}
                   </div>
                 </TableCell>
-                <TableCell align="center">{row.fx}</TableCell>
-                <TableCell align="center">{row.commodity}</TableCell>
+                <TableCell align="center">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {index !== 0 && !isLoading && afterHoursPrices[row.equity] && prices[row.equity] && (
+                      <span style={{ color: 'black' }}>
+                        {((afterHoursPrices[row.equity] - prices[row.equity]) / prices[row.equity] * 100).toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell align="center">
+                  {row.commodity}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
+
         </Table>
       </TableContainer>
-
     </Container>
   );
 }
