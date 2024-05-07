@@ -114,8 +114,8 @@ export default function FinancialInstrumentTracker() {
                 <TableCell align="center">
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     {index !== 0 && !isLoading && afterHoursPrices[row.equity] && prices[row.equity] && (
-                      <span style={{ color: 'black' }}>
-                        {((afterHoursPrices[row.equity] - prices[row.equity]) / prices[row.equity] * 100).toFixed(2)}%
+                      <span style={{ color: afterHoursPrices[row.equity] > prices[row.equity] ? 'green' : afterHoursPrices[row.equity] < prices[row.equity] ? 'red' : 'black' }}>
+                        {`${afterHoursPrices[row.equity] > prices[row.equity] ? '+' : ''}${((afterHoursPrices[row.equity] - prices[row.equity]) / prices[row.equity] * 100).toFixed(2)}%`}
                       </span>
                     )}
                   </div>
