@@ -1,11 +1,12 @@
 import React from 'react';
 import LoggedIn from '../components/navigationBars/loggedIn/LoggedIn';
+import './LoggedInMainLayout.css';
 
 export default function LoggedInMainLayout({children}) {
     return (
         <div className="LoggedInMainLayout">
             <LoggedIn />
-            <div>{children}</div>
+            <div className="content">{children}</div>
         </div>
     );
 }

@@ -14,14 +14,20 @@ import Toolbar from '@mui/material/Toolbar';
 import { Link } from '@mui/material';
 import TimeDisplay from '../../utilities/TimeDisplay';
 import { useAuth } from '../../authentication/authContext/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import './LoggedIn.css';
 
 export default function LoggedIn() {
   const { currentUser, userData, logout } = useAuth(); // Destructure currentUser and userData from useAuth
+  const navigate = useNavigate();
 
   const signOut = () => {
     logout();
   };
+
+  const navigateToSettings = () => {
+    navigate('/account-settings');
+  }
 
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
@@ -101,7 +107,7 @@ export default function LoggedIn() {
             </div>
           )}
           <Divider sx={{ backgroundColor: 'white' }} />
-          <MenuItem onClick={handleClose} sx={{
+          <MenuItem onClick={navigateToSettings} sx={{
             display: 'flex',
             alignItems: 'center'
           }}>
