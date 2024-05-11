@@ -142,6 +142,56 @@ const login = async (email, password) => {
       });
   };
 
+    // Function to update profile picture
+    const updateProfilePicture = async (newPicture) => {
+      try {
+        const user = auth.currentUser;
+        const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
+
+        // Upload new picture to Firebase Storage
+        await uploadBytes(pictureRef, newPicture);
+
+        // Fetch updated profile picture URL
+        const pictureUrl = await getDownloadURL(pictureRef);
+
+        // Update user data in Firestore with the new profile picture URL
+        const userDocRef = doc(firestoredb, 'user-details', user.uid);
+        await setDoc(userDocRef, { profilePictureUrl: pictureUrl }, { merge: true });
+
+        // Update local user data
+        setUserData(prevUserData => ({
+          ...prevUserData,
+          profilePictureUrl: pictureUrl
+        }));
+      } catch (error) {
+        console.error('Error updating profile picture:', error);
+        throw error;
+      }
+    };
+
+    useEffect(() => {
+      // Firebase event listener to set the current user
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        setCurrentUser(user);
+        setLoading(false);
+
+        // Fetch additional user details from Firestore if user is authenticated
+        if (user) {
+          try {
+            await fetchData(user);
+          } catch (error) {
+            console.error('Error fetching user details:', error);
+          }
+        } else {
+          // If user is not authenticated, reset user data state
+          setUserData(null);
+        }
+      });
+
+      // Clean up function
+      return unsubscribe;
+    }, []);
+
   useEffect(() => {
     // Firebase event listener to set the current user
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -233,7 +283,8 @@ const login = async (email, password) => {
     userData,
     signup,
     login,
-    logout
+    logout,
+    updateProfilePicture
   };
 
   return (
