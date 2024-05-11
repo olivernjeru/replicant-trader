@@ -13,8 +13,8 @@ export default function Settings() {
                 flexDirection: 'column',
                 alignItems: 'center',
             }} >
-            <Typography variant='h4'>Password</Typography>
-            <Typography variant='p'>Update password</Typography>
+                <Typography variant='h4'>Password</Typography>
+                <Typography variant='p'>Update password</Typography>
                 <TextField
                     margin="normal"
                     required

@@ -8,6 +8,7 @@ import SignUpPage from './pages/SignUpPage';
 import MarketMakerDashboardPage from './pages/MarketMakerDashboardPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
 import AccountSettingsPage from './pages/AccountSettingsPage';
+import AccountProfilePage from './pages/AccountProfilePage';
 import PrivateRoutes from './components/authentication/privateRoutes/PrivateRoutes';
 import ReversePrivateRoutes from './components/authentication/reversePrivateRoutes/ReversePrivateRoutes';
 import { AuthProvider } from './components/authentication/authContext/AuthContext';
@@ -29,6 +30,7 @@ root.render(
         <Route element={<PrivateRoutes />}>
           <Route path='mm-dashboard' element={<MarketMakerDashboardPage />} />
           <Route path='account-settings' element={<AccountSettingsPage />} />
+          <Route path='account-profile' element={<AccountProfilePage />} />
           <Route path='client' element={<ClientDashboardPage />} />
         </Route>
       </Routes>

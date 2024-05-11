@@ -29,6 +29,10 @@ export default function LoggedIn() {
     navigate('/account-settings');
   }
 
+  const navigateToProfile = () => {
+    navigate('/account-profile');
+  }
+
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (event) => {
@@ -113,7 +117,7 @@ export default function LoggedIn() {
           }}>
             <SettingsIcon sx={{ marginRight: '17px', marginLeft: '-5px' }} /> Settings
           </MenuItem>
-          <MenuItem onClick={handleClose} sx={{
+          <MenuItem onClick={navigateToProfile} sx={{
             display: 'flex',
             alignItems: 'center'
           }}>
