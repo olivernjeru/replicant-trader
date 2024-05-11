@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, firestoredb, storage } from '../../../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updatePassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
@@ -99,36 +98,36 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Function to log in an existing user
-const login = async (email, password) => {
-  try {
-    // Authenticate user with Firebase Authentication
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+  const login = async (email, password) => {
+    try {
+      // Authenticate user with Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-    // Lookup user details in Firestore
-    const userDoc = await getDoc(doc(firestoredb, 'user-details', user.uid));
-    const userData = userDoc.data();
+      // Lookup user details in Firestore
+      const userDoc = await getDoc(doc(firestoredb, 'user-details', user.uid));
+      const userData = userDoc.data();
 
-    // Lookup profile picture in Firebase Storage
-    const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
-    const pictureUrl = await getDownloadURL(pictureRef);
+      // Lookup profile picture in Firebase Storage
+      const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
+      const pictureUrl = await getDownloadURL(pictureRef);
 
-    // Combine user data with profile picture URL
-    const userInfo = { ...userData, pictureUrl };
+      // Combine user data with profile picture URL
+      const userInfo = { ...userData, pictureUrl };
 
-    // Redirect based on trading number prefix
-    if (userInfo.tradingNo.startsWith('MM')) {
-      navigate('/mm-dashboard');
-    } else if (userInfo.tradingNo.startsWith('C')) {
-      navigate('/client');
+      // Redirect based on trading number prefix
+      if (userInfo.tradingNo.startsWith('MM')) {
+        navigate('/mm-dashboard');
+      } else if (userInfo.tradingNo.startsWith('C')) {
+        navigate('/client');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Login Error:', error.message);
+      throw error; // Re-throw the error to handle it in the component
     }
-
-    return user;
-  } catch (error) {
-    console.error('Login Error:', error.message);
-    throw error; // Re-throw the error to handle it in the component
-  }
-};
+  };
 
   // Function to log out the current user
   const logout = () => {
@@ -142,55 +141,80 @@ const login = async (email, password) => {
       });
   };
 
-    // Function to update profile picture
-    const updateProfilePicture = async (newPicture) => {
-      try {
-        const user = auth.currentUser;
-        const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
+  // Function to update profile picture
+  const updateProfilePicture = async (newPicture) => {
+    try {
+      const user = auth.currentUser;
+      const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
 
-        // Upload new picture to Firebase Storage
-        await uploadBytes(pictureRef, newPicture);
+      // Upload new picture to Firebase Storage
+      await uploadBytes(pictureRef, newPicture);
 
-        // Fetch updated profile picture URL
-        const pictureUrl = await getDownloadURL(pictureRef);
+      // Fetch updated profile picture URL
+      const pictureUrl = await getDownloadURL(pictureRef);
 
-        // Update user data in Firestore with the new profile picture URL
-        const userDocRef = doc(firestoredb, 'user-details', user.uid);
-        await setDoc(userDocRef, { profilePictureUrl: pictureUrl }, { merge: true });
+      // Update user data in Firestore with the new profile picture URL
+      const userDocRef = doc(firestoredb, 'user-details', user.uid);
+      await setDoc(userDocRef, { profilePictureUrl: pictureUrl }, { merge: true });
 
-        // Update local user data
-        setUserData(prevUserData => ({
-          ...prevUserData,
-          profilePictureUrl: pictureUrl
-        }));
-      } catch (error) {
-        console.error('Error updating profile picture:', error);
-        throw error;
+      // Update local user data
+      setUserData(prevUserData => ({
+        ...prevUserData,
+        profilePictureUrl: pictureUrl
+      }));
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+      throw error;
+    }
+  };
+
+  // Function to update password
+  const updatePasswordInAuthProvider = async (currentPassword, newPassword) => {
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        throw new Error('User is not authenticated');
       }
-    };
 
-    useEffect(() => {
-      // Firebase event listener to set the current user
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
-        setCurrentUser(user);
-        setLoading(false);
+      // Reauthenticate user
+      const credentials = await signInWithEmailAndPassword(auth, user.email, currentPassword);
+      if (!credentials) {
+        throw new Error('Current password is incorrect');
+      }
 
-        // Fetch additional user details from Firestore if user is authenticated
-        if (user) {
-          try {
-            await fetchData(user);
-          } catch (error) {
-            console.error('Error fetching user details:', error);
-          }
-        } else {
-          // If user is not authenticated, reset user data state
-          setUserData(null);
+      // Update password
+      await updatePassword(user, newPassword);
+
+      console.log('Password updated successfully!');
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    // Firebase event listener to set the current user
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+
+      // Fetch additional user details from Firestore if user is authenticated
+      if (user) {
+        try {
+          await fetchData(user);
+        } catch (error) {
+          console.error('Error fetching user details:', error);
         }
-      });
+      } else {
+        // If user is not authenticated, reset user data state
+        setUserData(null);
+      }
+    });
 
-      // Clean up function
-      return unsubscribe;
-    }, []);
+    // Clean up function
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     // Firebase event listener to set the current user
@@ -284,7 +308,8 @@ const login = async (email, password) => {
     signup,
     login,
     logout,
-    updateProfilePicture
+    updateProfilePicture,
+    updatePassword: updatePasswordInAuthProvider
   };
 
   return (
