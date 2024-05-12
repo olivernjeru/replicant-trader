@@ -8,6 +8,7 @@ import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { auth, firestoredb } from "../../../firebase";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { useEffect, useState } from "react";
 
 export default function Chat() {
   const [messages, setMessages] = React.useState([]);
@@ -15,6 +16,7 @@ export default function Chat() {
   const chatContainerRef = React.useRef(null);
   const [error, setError] = React.useState(null);
   const [user] = useAuthState(auth);
+  const [clients, setClients] = useState([]);
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -41,6 +43,28 @@ export default function Chat() {
   const handleMessageChange = (event) => {
     setMessage(event.target.value);
   };
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const clientsQuery = query(collection(firestoredb, 'user-details'), orderBy('displayName'));
+        const unsubscribe = onSnapshot(clientsQuery, (querySnapshot) => {
+          const clientsData = [];
+          querySnapshot.forEach((doc) => {
+            const clientData = doc.data();
+            if (clientData.tradingNo.startsWith('C')) {
+              clientsData.push({ id: doc.id, displayName: clientData.displayName });
+            }
+          });
+          setClients(clientsData);
+        });
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      }
+    };
+    fetchClients();
+  }, []);
 
   const [searchTerm, setSearchTerm] = React.useState("");
 
@@ -120,11 +144,13 @@ export default function Chat() {
         />
         <Divider sx={{ backgroundColor: 'white' }} />
         <List>
-          <ListItem disablePadding>
-            <ListItemButton>
-              <ListItemText primary="JANE DOE" />
-            </ListItemButton>
-          </ListItem>
+          {clients.map((client) => (
+            <ListItem key={client.id} disablePadding>
+              <ListItemButton>
+                <ListItemText primary={client.displayName} />
+              </ListItemButton>
+            </ListItem>
+          ))}
         </List>
       </Box>
       <Box
