@@ -5,10 +5,12 @@ import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import { auth, firestoredb } from "../../../firebase";
+import { auth, firestoredb, storage } from "../../../firebase";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect, useState } from "react";
+import { getDoc, doc } from "firebase/firestore";
+import { ref, getDownloadURL } from 'firebase/storage';
 
 export default function Chat() {
   const [messages, setMessages] = React.useState([]);
@@ -17,6 +19,7 @@ export default function Chat() {
   const [error, setError] = React.useState(null);
   const [user] = useAuthState(auth);
   const [clients, setClients] = useState([]);
+  const [clientData, setClientData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -108,6 +111,30 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const handleClientClick = async (clientId) => {
+    try {
+      const clientDocRef = doc(firestoredb, 'user-details', clientId);
+      const clientDocSnapshot = await getDoc(clientDocRef);
+
+      if (clientDocSnapshot.exists()) {
+        const clientData = clientDocSnapshot.data();
+        const { displayName, nationalId } = clientData;
+
+        // Fetch the profile picture URL from Firebase Storage
+        const storageRef = ref(storage, `user_details/profile_pictures/${clientId}`); // Adjust the path as per your storage structure
+        const profilePictureUrl = await getDownloadURL(storageRef);
+
+        // Update the state with the client's data
+        setClientData({ profilePictureUrl, displayName, nationalId });
+      } else {
+        // If client does not exist, display blank
+        setClientData({ profilePictureUrl: "", displayName: "", nationalId: "" });
+      }
+    } catch (error) {
+      console.error('Error fetching client details:', error);
+    }
+  };
+
   return (
     <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240', ml: 3 }}>
       <Box sx={{ ml: -3, padding: 0 }}>
@@ -146,7 +173,7 @@ export default function Chat() {
         <List>
           {clients.map((client) => (
             <ListItem key={client.id} disablePadding>
-              <ListItemButton>
+              <ListItemButton onClick={() => handleClientClick(client.id)}>
                 <ListItemText primary={client.displayName} />
               </ListItemButton>
             </ListItem>
@@ -165,9 +192,9 @@ export default function Chat() {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: 1 }}>
-          <Avatar sx={{ width: 32, height: 32 }} />
-          <Typography>JANE DOE</Typography> {/* Display the email address of the sender */}
-          <Typography> 543 789 8890 </Typography>
+          <Avatar src={clientData.profilePictureUrl} sx={{ width: 32, height: 32 }} />
+          <Typography>{clientData.displayName}</Typography>
+          <Typography>{clientData.nationalId}</Typography>
         </Box>
         <Divider sx={{ backgroundColor: 'white' }} />
         <Box
