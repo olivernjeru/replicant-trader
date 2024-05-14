@@ -16,6 +16,12 @@ export default function HistoricalPerformanceTracker() {
     const chartInstanceRef = useRef(null);
 
     useEffect(() => {
+        // Check if there's a stored ticker symbol in local storage
+        const storedTickerSymbol = localStorage.getItem('storedTickerSymbol');
+        if (storedTickerSymbol) {
+            setTickerSymbol(storedTickerSymbol);
+        }
+
         const fetchData = async () => {
             setError(null);
             setIsLoading(true);
@@ -26,19 +32,26 @@ export default function HistoricalPerformanceTracker() {
 
                 const today = new Date();
                 const endDate = today.toISOString().split('T')[0];
-                const startDate = new Date(today.getTime() - (732 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]; // Adjust the duration as needed
+                const startDate = new Date(today.getTime() - (732 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
 
-                const response = await rest.stocks.aggregates(tickerSymbol, 1, 'day', startDate, endDate); // Use dynamic ticker symbol
-                const fetchedData = response.results.map(result => ({
-                    time: new Date(result.t).toISOString().split('T')[0],
-                    value: result.c
-                }));
+                const cacheKey = `fitData-${tickerSymbol}-${startDate}-${endDate}`;
+                const cachedData = localStorage.getItem(cacheKey);
+                if (cachedData) {
+                    setData(JSON.parse(cachedData));
+                    setIsLoading(false);
+                } else {
+                    const response = await rest.stocks.aggregates(tickerSymbol, 1, 'day', startDate, endDate); // Use dynamic ticker symbol
+                    const fetchedData = response.results.map(result => ({
+                        time: new Date(result.t).toISOString().split('T')[0],
+                        value: result.c
+                    }));
 
-                // console.log(fetchedData); // Log the fetched data
+                    setData(fetchedData); // Set the fetched data
+                    setIsLoading(false);
 
-                setData(fetchedData); // Set the fetched data
-
-                setIsLoading(false);
+                    // Store data in local storage
+                    localStorage.setItem(cacheKey, JSON.stringify(fetchedData));
+                }
             } catch (error) {
                 console.error('An error occurred while fetching data:', error);
                 setError('An error occurred while fetching data. Please try again later.');
@@ -50,19 +63,14 @@ export default function HistoricalPerformanceTracker() {
     }, [tickerSymbol]); // Update data fetching whenever the ticker symbol changes
 
     useEffect(() => {
-        // console.log("Data length:", data.length);
-        // console.log("Chart Container Ref:", chartContainerRef.current);
-        // console.log("Chart Instance:", chartInstanceRef.current);
-
         if (!data.length) return;
 
         if (!chartInstanceRef.current) {
-            // console.log("Creating chart instance...");
             chartInstanceRef.current = createChart(chartContainerRef.current, {
                 width: 600,
                 height: 230,
                 layout: {
-                    backgroundColor: '#FFFFFF', // Set a contrasting background color for the chart
+                    backgroundColor: '#FFFFFF',
                 },
             });
         }
@@ -71,8 +79,7 @@ export default function HistoricalPerformanceTracker() {
 
         return () => {
             if (chartInstanceRef.current) {
-                // console.log("Removing chart instance...");
-                chartInstanceRef.current.remove(); // Cleanup the chart when component unmounts
+                chartInstanceRef.current.remove();
                 chartInstanceRef.current = null;
             }
         };
@@ -81,16 +88,15 @@ export default function HistoricalPerformanceTracker() {
     const updateChartData = (data) => {
         if (!chartInstanceRef.current) return;
 
-        // Clear previous data if it exists
         if (chartInstanceRef.current.seriesCount && chartInstanceRef.current.seriesCount() > 0) {
             chartInstanceRef.current.removeSeries(0);
         }
 
         const lineSeries = chartInstanceRef.current.addLineSeries({
-            color: '#112240', // Set line color to black
-            lineWidth: 2, // Set line width
+            color: '#112240',
+            lineWidth: 2,
         });
-        lineSeries.setData(data); // Map the data onto the chart
+        lineSeries.setData(data);
     };
 
     const handleInputChange = (event) => {
@@ -99,9 +105,11 @@ export default function HistoricalPerformanceTracker() {
 
     const handleSend = () => {
         if (input.trim() !== "") {
-            // console.log(input);
-            setTickerSymbol(input.toUpperCase()); // Update the ticker symbol based on input
+            setTickerSymbol(input.toUpperCase());
             setInput("");
+
+            // Store the searched ticker symbol in local storage
+            localStorage.setItem('storedTickerSymbol', input.toUpperCase());
         }
     };
 
@@ -130,16 +138,16 @@ export default function HistoricalPerformanceTracker() {
                         ),
                         sx: {
                             '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'white', // Change outline color
+                                borderColor: 'white',
                             },
                             '& input': {
-                                color: 'white', // Change input text color
+                                color: 'white',
                             }
                         }
                     }}
                     InputLabelProps={{
                         style: {
-                            color: 'white', // Change label text color
+                            color: 'white',
                         }
                     }}
                 />

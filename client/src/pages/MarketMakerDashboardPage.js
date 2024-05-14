@@ -10,22 +10,22 @@ export default function MarketMakerDashboardPage() {
     return (
         <div className="MarketMakerDashboard">
             <LoggedInMainLayout>
-                    <div className="top">
-                        <div className="fit">
-                            <FinancialInstrumentTracker />
-                        </div>
-                        <div className="hp">
-                            <HistoricalPerformanceTracker />
-                        </div>
+                <div className="top">
+                    <div className="fit">
+                        <FinancialInstrumentTracker />
                     </div>
-                    <div className="bottom">
-                        <div className="chat">
-                            <Chat />
-                        </div>
-                        <div className="quote">
-                            <Quote />
-                        </div>
+                    <div className="hp">
+                        <HistoricalPerformanceTracker />
                     </div>
+                </div>
+                <div className="bottom">
+                    <div className="chat">
+                        <Chat />
+                    </div>
+                    <div className="quote">
+                        <Quote />
+                    </div>
+                </div>
 
 
             </LoggedInMainLayout>

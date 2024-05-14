@@ -1,0 +1,5 @@
+/* NSE.css */
+.kenya-equities-table-container {
+    max-height: 230px;
+    overflow-y: auto;
+}
