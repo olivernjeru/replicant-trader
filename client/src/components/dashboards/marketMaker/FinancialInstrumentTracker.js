@@ -16,10 +16,11 @@ function createData(equity, bond, fx, commodity) {
 }
 
 const rows = [
-  createData('Ticker', 'REFPRICE', '%CHG', 'TYPE'),
-  createData('AMZN', '', '', 'EQUITY'),
-  createData('TSLA', '', '', 'EQUITY'),
-  createData('AAPL', '', '', 'EQUITY'),
+  createData('AMZN', '', ''),
+  createData('TSLA', '', ''),
+  createData('AAPL', '', ''),
+  createData('NVDA', '', ''),
+  createData('META', '', ''),
 ];
 
 const CACHE_DURATION = 30000; // 30 seconds
@@ -38,7 +39,7 @@ export default function FinancialInstrumentTracker() {
     setError(null);
 
     const rest = restClient(key);
-    const tickers = ['TSLA', 'AAPL', 'AMZN'];
+    const tickers = ['TSLA', 'AAPL', 'AMZN', 'NVDA', 'META'];
 
     try {
       const today = new Date();
@@ -85,13 +86,12 @@ export default function FinancialInstrumentTracker() {
   return (
     <Container>
       <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} size="big" aria-label="a dense table">
+        <Table size="small" aria-label="a dense table">
           <TableHead>
             <TableRow>
-              <TableCell>1. EQUITY</TableCell>
-              <TableCell align="center">2. BOND</TableCell>
-              <TableCell align="center">3. FX</TableCell>
-              <TableCell align="center">4. COMMODITY</TableCell>
+              <TableCell>TICKER</TableCell>
+              <TableCell align="center">REFPRICE</TableCell>
+              <TableCell align="center">%CHG</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -113,15 +113,12 @@ export default function FinancialInstrumentTracker() {
                 </TableCell>
                 <TableCell align="center">
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {index !== 0 && !isLoading && afterHoursPrices[row.equity] && prices[row.equity] && (
+                    {index !== 6 && !isLoading && afterHoursPrices[row.equity] && prices[row.equity] && (
                       <span style={{ color: afterHoursPrices[row.equity] > prices[row.equity] ? 'green' : afterHoursPrices[row.equity] < prices[row.equity] ? 'red' : 'black' }}>
                         {`${afterHoursPrices[row.equity] > prices[row.equity] ? '+' : ''}${((afterHoursPrices[row.equity] - prices[row.equity]) / prices[row.equity] * 100).toFixed(2)}%`}
                       </span>
                     )}
                   </div>
-                </TableCell>
-                <TableCell align="center">
-                  {row.commodity}
                 </TableCell>
               </TableRow>
             ))}
