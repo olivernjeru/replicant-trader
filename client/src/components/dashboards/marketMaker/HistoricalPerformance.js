@@ -14,6 +14,7 @@ export default function HistoricalPerformanceTracker() {
 
     const chartContainerRef = useRef(null);
     const chartInstanceRef = useRef(null);
+    const retryTimeoutRef = useRef(null);
 
     useEffect(() => {
         // Check if there's a stored ticker symbol in local storage
@@ -54,12 +55,22 @@ export default function HistoricalPerformanceTracker() {
                 }
             } catch (error) {
                 console.error('An error occurred while fetching data:', error);
-                setError('An error occurred while fetching data. Please try again later.');
-                setIsLoading(false);
+                setError('An error occurred while fetching data. Retrying...');
+                setIsLoading(true);
+
+                // Retry after 1 minute
+                retryTimeoutRef.current = setTimeout(fetchData, 60000);
             }
         };
 
         fetchData();
+
+        // Cleanup timeout on unmount
+        return () => {
+            if (retryTimeoutRef.current) {
+                clearTimeout(retryTimeoutRef.current);
+            }
+        };
     }, [tickerSymbol]); // Update data fetching whenever the ticker symbol changes
 
     useEffect(() => {
@@ -153,7 +164,7 @@ export default function HistoricalPerformanceTracker() {
                 />
             </Box>
             {isLoading ? (
-                <CircularProgress />
+                <CircularProgress sx={{mt:10}} />
             ) : (
                 <div ref={chartContainerRef} />
             )}

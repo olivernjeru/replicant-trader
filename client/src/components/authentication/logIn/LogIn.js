@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { ThemeProvider } from '@mui/material/styles';
 import { useState } from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
 import defaultTheme from '../../styleUtilities/DefaultTheme';
 import { useAuth } from '../authContext/AuthContext';
 import './LogIn.css';
@@ -21,9 +22,11 @@ export default function LogIn() {
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const logIn = async (event) => {
     event.preventDefault();
+    setLoading(true); // Set loading to true when submitting the form
 
     // Clear previous error messages
     setEmailError('');
@@ -32,12 +35,15 @@ export default function LogIn() {
     // Form validation
     if (!email.trim()) {
       setEmailError('Enter your email.');
+      setLoading(false); // Set loading to false if validation fails
       return;
     } else if (!isValidEmail(email.trim())) {
       setEmailError('Enter a valid email address.');
+      setLoading(false); // Set loading to false if validation fails
       return;
     } else if (!password.trim()) {
       setPasswordError('Enter your password.');
+      setLoading(false); // Set loading to false if validation fails
       return;
     }
 
@@ -51,6 +57,8 @@ export default function LogIn() {
       } else {
         setPasswordError('Invalid email or password.');
       }
+    } finally {
+      setLoading(false); // Set loading to false after login attempt
     }
   };
 
@@ -74,52 +82,63 @@ export default function LogIn() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
+            height: '50vh',
           }}
         >
-          <Typography component="h1" variant="h5">
-            LOG IN
-          </Typography>
-          <Box component="form" onSubmit={logIn} noValidate sx={{ mt: 2 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoFocus
-              error={!!emailError}
-              helperText={emailError}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              error={!!passwordError}
-              helperText={passwordError}
-            />
-            <FormControlLabel
-              control={<Checkbox value="remember" color="primary" />}
-              label="Remember me"
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-            >
-              Log In
-            </Button>
+          {loading ? ( // Render loading indicator if loading is true
+            <CircularProgress sx={{ mt: 3 }} />
+          ) : (
+            <>
+              <Typography component="h1" variant="h5">
+                LOG IN
+              </Typography>
+              <Box component="form" onSubmit={logIn} noValidate sx={{ mt: 2 }}>
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="email"
+                  label="Email Address"
+                  name="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoFocus
+                  error={!!emailError}
+                  helperText={emailError}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="password"
+                  label="Password"
+                  type="password"
+                  id="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  error={!!passwordError}
+                  helperText={passwordError}
+                />
+                <FormControlLabel
+                  control={<Checkbox value="remember" color="primary" />}
+                  label="Remember me"
+                />
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2 }}
+                >
+                  Log In
+                </Button>
+              </Box>
+            </>
+          )}
+          {/* Conditionally render forgot password and sign up links */}
+          {!loading && (
             <Grid container>
               <Grid item xs>
                 <Link href="/reset-password" variant="body2">
@@ -132,7 +151,7 @@ export default function LogIn() {
                 </Link>
               </Grid>
             </Grid>
-          </Box>
+          )}
         </Box>
       </Container>
     </ThemeProvider>

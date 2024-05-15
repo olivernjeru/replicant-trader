@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [userData, setUserData] = useState(null); // Additional user details fetched from Firestore
-  const [loading, setLoading] = useState(true);
 
   // Function to fetch user data from Firestore
   const fetchData = async (user) => {
@@ -38,15 +37,26 @@ export const AuthProvider = ({ children }) => {
         // Add profile picture URL to user data
         userData = { ...userData, profilePictureUrl: pictureUrl };
 
-        console.log('User ID:', user.uid);
-        console.log('User Data:', userData);
-        console.log('User Profile Photo:', pictureUrl);
         setUserData(userData);
       }
     } catch (error) {
       console.error('Error fetching user details:', error);
     }
   };
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setCurrentUser(user);
+
+      if (user) {
+        await fetchData(user);
+      } else {
+        setUserData(null);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Function to sign up a new user
   const signup = async (email, password, userInput) => {
@@ -133,6 +143,9 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     auth.signOut()
       .then(() => {
+        // Clear all cache throughout the app
+        localStorage.clear();
+
         // After successful sign out, navigate to "/"
         navigate('/');
       })
@@ -193,114 +206,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    // Firebase event listener to set the current user
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-
-      // Fetch additional user details from Firestore if user is authenticated
-      if (user) {
-        try {
-          await fetchData(user);
-        } catch (error) {
-          console.error('Error fetching user details:', error);
-        }
-      } else {
-        // If user is not authenticated, reset user data state
-        setUserData(null);
-      }
-    });
-
-    // Clean up function
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    // Firebase event listener to set the current user
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-
-      // Fetch additional user details from Firestore if user is authenticated
-      if (user) {
-        try {
-          // Fetch user details document
-          const userDocRef = firestoredb.doc(`user-details/${user.uid}`);
-          const userDocSnapshot = await userDocRef.get();
-
-          if (userDocSnapshot.exists()) {
-            // If user details document exists, set the user data state
-            let userData = userDocSnapshot.data();
-
-            // Fetch profile picture URL from Firebase Storage
-            const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
-            const pictureUrl = await getDownloadURL(pictureRef);
-
-            // Add profile picture URL to user data
-            userData = { ...userData, profilePictureUrl: pictureUrl };
-
-            console.log('User ID:', user.uid);
-            console.log('Email:', user.email);
-            console.log('User Details Data:', userData);
-            setUserData(userData);
-          }
-        } catch (error) {
-          console.error('Error fetching user details:', error);
-        }
-      } else {
-        // If user is not authenticated, reset user data state
-        setUserData(null);
-      }
-    });
-
-    // Clean up function
-    return unsubscribe;
-  }, []);
-
-  // Fetch data from Firestore collection
-  useEffect(() => {
-    // Firebase event listener to set the current user
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-
-      // Fetch additional user details from Firestore if user is authenticated
-      if (user) {
-        try {
-          // Fetch user details document based on the user's ID
-          const userDocRef = doc(firestoredb, 'user-details', user.uid);
-          const userDocSnapshot = await getDoc(userDocRef);
-
-          if (userDocSnapshot.exists()) {
-            // If user details document exists, set the user data state
-            let userData = userDocSnapshot.data();
-
-            // Fetch profile picture URL from Firebase Storage
-            const pictureRef = ref(storage, `user_details/profile_pictures/${user.uid}`);
-            const pictureUrl = await getDownloadURL(pictureRef);
-
-            // Add profile picture URL to user data
-            userData = { ...userData, profilePictureUrl: pictureUrl };
-
-            console.log('User ID:', user.uid);
-            console.log('User Data:', userData);
-            console.log('User Profile Photo:', pictureUrl);
-            setUserData(userData);
-          }
-        } catch (error) {
-          console.error('Error fetching user details:', error);
-        }
-      } else {
-        // If user is not authenticated, reset user data state
-        setUserData(null);
-      }
-    });
-
-    // Clean up function
-    return unsubscribe;
-  }, []);
-
   // Value object to be provided by the context
   const value = {
     currentUser,
@@ -314,7 +219,8 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
+
 };

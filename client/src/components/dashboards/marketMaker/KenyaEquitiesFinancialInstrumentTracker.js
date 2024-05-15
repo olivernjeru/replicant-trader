@@ -14,6 +14,7 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isSorted, setIsSorted] = useState(false); // State variable to track sorting
+    const [retryTimeout, setRetryTimeout] = useState(null); // State variable to store retry timeout
 
     const url = 'https://nairobi-stock-exchange-nse.p.rapidapi.com/stocks';
     const options = {
@@ -24,29 +25,39 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
         }
     };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Check if data exists in local storage
-                const cachedData = localStorage.getItem('nseData');
-                if (cachedData) {
-                    setData(JSON.parse(cachedData));
-                    setIsLoading(false);
-                } else {
-                    const response = await fetch(url, options);
-                    const result = await response.json();
-                    setData(result);
-                    // Store data in local storage
-                    localStorage.setItem('nseData', JSON.stringify(result));
-                    setIsLoading(false);
-                }
-            } catch (error) {
-                setError('An error occurred while fetching data. Please try again later.');
+    const fetchData = async () => {
+        try {
+            // Check if data exists in local storage
+            const cachedData = localStorage.getItem('nseData');
+            if (cachedData) {
+                setData(JSON.parse(cachedData));
+                setIsLoading(false);
+            } else {
+                const response = await fetch(url, options);
+                const result = await response.json();
+                setData(result);
+                // Store data in local storage
+                localStorage.setItem('nseData', JSON.stringify(result));
                 setIsLoading(false);
             }
-        };
+        } catch (error) {
+            setError('An error occurred while fetching data. Retrying...');
+            setIsLoading(true);
 
+            // Retry after 1 minute
+            const retryTimeout = setTimeout(fetchData, 60000); // 1 Minute
+            setRetryTimeout(retryTimeout);
+        }
+    };
+
+    useEffect(() => {
         fetchData();
+
+        return () => {
+            if (retryTimeout) {
+                clearTimeout(retryTimeout);
+            }
+        };
     }, []);
 
     useEffect(() => {
@@ -62,6 +73,10 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
             setIsSorted(true); // Update state to indicate sorting has been done
         }
     }, [data, isSorted]);
+
+    const calculateChangePercentage = (change, price) => {
+        return ((change / price) * 100).toFixed(2);
+    };
 
     if (isLoading) {
         return <CircularProgress />;
@@ -80,9 +95,10 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
                             <TableRow>
                                 <TableCell>TICKER</TableCell>
                                 <TableCell>NAME</TableCell>
-                                <TableCell align="center">VOLUME</TableCell>
                                 <TableCell align="center">PRICE</TableCell>
+                                <TableCell align="center">VOLUME</TableCell>
                                 <TableCell align="center">CHANGE</TableCell>
+                                <TableCell align="center">%CHANGE</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -92,10 +108,13 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
                                         {row.ticker}
                                     </TableCell>
                                     <TableCell>{row.name}</TableCell>
-                                    <TableCell align="center">{row.volume || 'N/A'}</TableCell>
                                     <TableCell align="center">{row.price || 'N/A'}</TableCell>
+                                    <TableCell align="center">{row.volume || 'N/A'}</TableCell>
                                     <TableCell align="center" style={{ color: row.change > 0 ? 'green' : row.change < 0 ? 'red' : 'black' }}>
                                         {row.change || 'N/A'}
+                                    </TableCell>
+                                    <TableCell align="center" style={{ color: row.change > 0 ? 'green' : row.change < 0 ? 'red' : 'black' }}>
+                                        {row.price && row.change ? `${calculateChangePercentage(row.change, row.price)}%` : 'N/A'}
                                     </TableCell>
                                 </TableRow>
                             ))}

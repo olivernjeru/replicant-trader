@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { ThemeProvider } from '@mui/material/styles';
+import CircularProgress from '@mui/material/CircularProgress';
 import { firestoredb } from '../../../firebase';
 import { query, collection, where, getDocs } from 'firebase/firestore';
 import defaultTheme from '../../styleUtilities/DefaultTheme';
@@ -42,6 +43,8 @@ export default function SignUp() {
     nationalId: '',
     username: '',
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (event) => {
     const { name, value, files } = event.target;
@@ -113,9 +116,11 @@ export default function SignUp() {
 
   const signUp = async (event) => {
     event.preventDefault();
+    setLoading(true);
 
     // Check if there are any validation errors
     if (Object.values(errors).some((error) => error !== '')) {
+      setLoading(false);
       return;
     }
 
@@ -209,153 +214,161 @@ export default function SignUp() {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
+            height: '70vh',
           }}
         >
-          <Typography component="h1" variant="h5">
-            CREATE AN ACCOUNT
-          </Typography>
-          <Box component="form" onSubmit={signUp} noValidate sx={{ mt: 1 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="firstName"
-                label="First Name"
-                autoFocus
-                value={userInput.firstName}
-                onChange={handleInputChange}
-                error={!!errors.firstName}
-                helperText={errors.firstName}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="lastName"
-                label="Last Name"
-                value={userInput.lastName}
-                onChange={handleInputChange}
-                error={!!errors.lastName}
-                helperText={errors.lastName}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="email"
-                label="Email Address"
-                type="email"
-                autoComplete="email"
-                value={userInput.email}
-                onChange={handleInputChange}
-                error={!!errors.email}
-                helperText={errors.email}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Password"
-                type="password"
-                autoComplete="new-password"
-                value={userInput.password}
-                onChange={handleInputChange}
-                error={!!errors.password}
-                helperText={errors.password}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="confirmPassword"
-                label="Confirm Password"
-                type="password"
-                autoComplete="new-password"
-                value={userInput.confirmPassword}
-                onChange={handleInputChange}
-                error={!!errors.confirmPassword}
-                helperText={errors.confirmPassword}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="tradingNo"
-                label="Trading Number"
-                value={userInput.tradingNo}
-                onChange={handleInputChange}
-                error={!!errors.tradingNo}
-                helperText={errors.tradingNo}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="kraPin"
-                label="KRA PIN"
-                value={userInput.kraPin}
-                onChange={handleInputChange}
-                error={!!errors.kraPin}
-                helperText={errors.kraPin}
-              />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="nationalId"
-                label="National Identification Number"
-                value={userInput.nationalId}
-                onChange={handleInputChange}
-                error={!!errors.nationalId}
-                helperText={errors.nationalId}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
-              <Box sx={{ flexGrow: 1 }}>
-                <TextField
-                  margin="normal"
-                  required
+          {loading ? ( // Render loading indicator if loading is true
+            <CircularProgress />
+          ) : (
+            <>
+              <Typography component="h1" variant="h5">
+                CREATE AN ACCOUNT
+              </Typography>
+              <Box component="form" onSubmit={signUp} noValidate sx={{ mt: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="firstName"
+                    label="First Name"
+                    autoFocus
+                    value={userInput.firstName}
+                    onChange={handleInputChange}
+                    error={!!errors.firstName}
+                    helperText={errors.firstName}
+                  />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="lastName"
+                    label="Last Name"
+                    value={userInput.lastName}
+                    onChange={handleInputChange}
+                    error={!!errors.lastName}
+                    helperText={errors.lastName}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="email"
+                    label="Email Address"
+                    type="email"
+                    autoComplete="email"
+                    value={userInput.email}
+                    onChange={handleInputChange}
+                    error={!!errors.email}
+                    helperText={errors.email}
+                  />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="password"
+                    label="Password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={userInput.password}
+                    onChange={handleInputChange}
+                    error={!!errors.password}
+                    helperText={errors.password}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="confirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={userInput.confirmPassword}
+                    onChange={handleInputChange}
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword}
+                  />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="tradingNo"
+                    label="Trading Number"
+                    value={userInput.tradingNo}
+                    onChange={handleInputChange}
+                    error={!!errors.tradingNo}
+                    helperText={errors.tradingNo}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="kraPin"
+                    label="KRA PIN"
+                    value={userInput.kraPin}
+                    onChange={handleInputChange}
+                    error={!!errors.kraPin}
+                    helperText={errors.kraPin}
+                  />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="nationalId"
+                    label="National Identification Number"
+                    value={userInput.nationalId}
+                    onChange={handleInputChange}
+                    error={!!errors.nationalId}
+                    helperText={errors.nationalId}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2 }}>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <TextField
+                      margin="normal"
+                      required
+                      fullWidth
+                      name="username"
+                      label="Username"
+                      value={userInput.username}
+                      onChange={handleInputChange}
+                      error={!!errors.username}
+                      helperText={errors.username}
+                    />
+                    <input
+                      accept="image/*"
+                      id="contained-button-file"
+                      multiple
+                      type="file"
+                      name="picture"
+                      onChange={handleInputChange}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="contained-button-file">
+                      <Button variant="contained" component="span" fullWidth>
+                        Upload Picture
+                      </Button>
+                    </label>
+                  </Box>
+                </Box>
+                <Button
+                  type="submit"
                   fullWidth
-                  name="username"
-                  label="Username"
-                  value={userInput.username}
-                  onChange={handleInputChange}
-                  error={!!errors.username}
-                  helperText={errors.username}
-                />
-                <input
-                  accept="image/*"
-                  id="contained-button-file"
-                  multiple
-                  type="file"
-                  name="picture"
-                  onChange={handleInputChange}
-                  style={{ display: 'none' }}
-                />
-                <label htmlFor="contained-button-file">
-                  <Button variant="contained" component="span" fullWidth>
-                    Upload Picture
-                  </Button>
-                </label>
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2 }}
+                >
+                  SUBMIT
+                </Button>
               </Box>
-            </Box>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-            >
-              SUBMIT
-            </Button>
-          </Box>
+            </>
+          )}
         </Box>
       </Container>
     </ThemeProvider>
