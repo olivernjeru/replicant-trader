@@ -5,9 +5,12 @@ import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import { auth, firestoredb } from "../../../firebase";
+import { auth, firestoredb, storage } from "../../../firebase";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { useEffect, useState } from "react";
+import { getDoc, doc } from "firebase/firestore";
+import { ref, getDownloadURL } from 'firebase/storage';
 
 export default function Chat() {
   const [messages, setMessages] = React.useState([]);
@@ -15,6 +18,8 @@ export default function Chat() {
   const chatContainerRef = React.useRef(null);
   const [error, setError] = React.useState(null);
   const [user] = useAuthState(auth);
+  const [marketMakers, setMarketMakers] = useState([]);
+  const [marketMakerData, setClientData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -41,6 +46,28 @@ export default function Chat() {
   const handleMessageChange = (event) => {
     setMessage(event.target.value);
   };
+
+  useEffect(() => {
+    const fetchMarketMakers = async () => {
+      try {
+        const marketMakersQuery = query(collection(firestoredb, 'user-details'), orderBy('displayName'));
+        const unsubscribe = onSnapshot(marketMakersQuery, (querySnapshot) => {
+          const marketMakersData = [];
+          querySnapshot.forEach((doc) => {
+            const marketMakerData = doc.data();
+            if (marketMakerData.tradingNo.startsWith('MM')) {
+              marketMakersData.push({ id: doc.id, displayName: marketMakerData.displayName });
+            }
+          });
+          setMarketMakers(marketMakersData);
+        });
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error fetching market makers:', error);
+      }
+    };
+    fetchMarketMakers();
+  }, []);
 
   const [searchTerm, setSearchTerm] = React.useState("");
 
@@ -84,9 +111,33 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const handleClientClick = async (clientId) => {
+    try {
+      const clientDocRef = doc(firestoredb, 'user-details', clientId);
+      const clientDocSnapshot = await getDoc(clientDocRef);
+
+      if (clientDocSnapshot.exists()) {
+        const clientData = clientDocSnapshot.data();
+        const { displayName, nationalId } = clientData;
+
+        // Fetch the profile picture URL from Firebase Storage
+        const storageRef = ref(storage, `user_details/profile_pictures/${clientId}`); // Adjust the path as per your storage structure
+        const profilePictureUrl = await getDownloadURL(storageRef);
+
+        // Update the state with the client's data
+        setClientData({ profilePictureUrl, displayName, nationalId });
+      } else {
+        // If client does not exist, display blank
+        setClientData({ profilePictureUrl: "", displayName: "", nationalId: "" });
+      }
+    } catch (error) {
+      console.error('Error fetching client details:', error);
+    }
+  };
+
   return (
-    <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240', ml: 3 }}>
-      <Box sx={{ ml: -3, padding: 0 }}>
+    <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240' }}>
+      <Box sx={{ ml: -3, padding: 1, maxHeight: '43vh', overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#D9D9D9', borderRadius: '4px' }, '&::-webkit-scrollbar-track': { backgroundColor: '#112240' } }}>
         <TextField
           label="Search"
           variant="outlined"
@@ -120,28 +171,30 @@ export default function Chat() {
         />
         <Divider sx={{ backgroundColor: 'white' }} />
         <List>
-          <ListItem disablePadding>
-            <ListItemButton>
-              <ListItemText primary="JANE DOE" />
-            </ListItemButton>
-          </ListItem>
+          {marketMakers.map((marketMaker) => (
+            <ListItem key={marketMaker.id} disablePadding>
+              <ListItemButton onClick={() => handleClientClick(marketMaker.id)}>
+                <ListItemText primary={marketMaker.displayName} />
+              </ListItemButton>
+            </ListItem>
+          ))}
         </List>
       </Box>
       <Box
         sx={{
-          height: "40vh",
-          width: '350px',
+          height: "43vh",
+          width: '50%',
           display: "flex",
           flexDirection: "column",
           padding: '1%',
-          mr: -3,
+          mr: 1,
           overflowY: 'auto' // Enable vertical scrolling
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: 1 }}>
-          <Avatar sx={{ width: 32, height: 32 }} />
-          <Typography>JANE DOE</Typography> {/* Display the email address of the sender */}
-          <Typography> 543 789 8890 </Typography>
+          <Avatar src={marketMakerData.profilePictureUrl} sx={{ width: 32, height: 32 }} />
+          <Typography>{marketMakerData.displayName}</Typography>
+          <Typography>{marketMakerData.nationalId}</Typography>
         </Box>
         <Divider sx={{ backgroundColor: 'white' }} />
         <Box

@@ -1,8 +1,9 @@
 import React from 'react';
+import { Box } from '@mui/material';
 import LoggedInMainLayout from '../layout/LoggedInMainLayout';
 import './ClientDashboardPage.css';
 import FinancialInstrumentTracker from '../components/dashboards/client/FinancialInstrumentTracker';
-import HistoricalPerformanceTracker from '../components/dashboards/marketMaker/HistoricalPerformance';
+import HistoricalPerformanceTracker from '../components/dashboards/client/HistoricalPerformance';
 import Chat from '../components/dashboards/client/Chat';
 import Quote from '../components/dashboards/client/Quote';
 
@@ -10,24 +11,30 @@ export default function ClientDashboardPage() {
     return (
         <div className="ClientDashboard">
             <LoggedInMainLayout>
-                    <div className="top">
-                        <div className="fit">
+                <div className="ClientTop">
+                    <div>
+                        <Box sx={{ minHeight: '41vh', mt: 1, padding: 1, width: '48vw', borderRadius: 0 }}>
                             <FinancialInstrumentTracker />
-                        </div>
-                        <div className="hp">
+                        </Box>
+                    </div>
+                    <div>
+                        <Box sx={{ minHeight: '41vh', mt: 1, padding: 1, width: '48vw', borderRadius: 0 }}>
                             <HistoricalPerformanceTracker />
-                        </div>
+                        </Box>
                     </div>
-                    <div className="bottom">
-                        <div className="chat">
+                </div>
+                <div className="ClientBottom">
+                    <div>
+                        <Box sx={{ minHeight: '45vh', mt: 1, padding: 1, width: '48vw', borderRadius: 0 }}>
                             <Chat />
-                        </div>
-                        <div className="quote">
-                            <Quote />
-                        </div>
+                        </Box>
                     </div>
-
-
+                    <div>
+                        <Box sx={{ minHeight: '45vh', mt: 1, padding: 1, width: '48vw', borderRadius: 0 }}>
+                            <Quote />
+                        </Box>
+                    </div>
+                </div>
             </LoggedInMainLayout>
         </div>
     )

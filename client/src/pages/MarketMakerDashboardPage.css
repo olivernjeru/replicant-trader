@@ -10,23 +10,8 @@
     background-color: var(--primary-background-color);
 }
 
-.top,
-.bottom {
+.MarketMakerTop,
+.MarketMakerBottom {
     display: flex;
     justify-content: space-between;
-}
-
-.top {
-    /* background-color: red; */
-    /* margin-top: 24px; */
-    margin-bottom: 4%;
-}
-
-.bottom {
-    /* background-color: green; */
-}
-
-.fit,
-.hp {
-    margin-top: 20px;
 }

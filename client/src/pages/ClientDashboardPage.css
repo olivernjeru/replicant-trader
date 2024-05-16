@@ -1,24 +1,10 @@
 .ClientDashboard {
     height: 92.4vh;
+    background-color: #0A192F;
 }
 
-.top,
-.bottom {
+.ClientTop,
+.ClientBottom {
     display: flex;
     justify-content: space-between;
-    height: 35vh;
-}
-
-.top {
-    /* background-color: red; */
-    margin-top: 64px;
-}
-
-.bottom {
-    /* background-color: green; */
-    margin-top: 1%;
-}
-
-.fit {
-    margin-top: 1%;
 }
