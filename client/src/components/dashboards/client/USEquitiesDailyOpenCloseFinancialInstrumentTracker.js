@@ -6,7 +6,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import { Container, CircularProgress, Box } from '@mui/material';
+import { Container, CircularProgress } from '@mui/material';
 import { restClient } from '@polygon.io/client-js';
 import { useState, useEffect, useRef } from 'react';
 
@@ -24,7 +24,7 @@ const rows = [
 
 const key = process.env.REACT_APP_POLYGONIO_CLIENT_FIT_KEY;
 
-export default function USEquitiesFinancialInstrumentTracker() {
+export default function USEquitiesDailyOpenCloseFinancialInstrumentTracker() {
     const [prices, setPrices] = useState({}); // State for all fetched prices
     const [afterHoursPrices, setAfterHoursPrices] = useState({}); // State for after-hours prices
     const [volumes, setVolumes] = useState({}); // State for volumes

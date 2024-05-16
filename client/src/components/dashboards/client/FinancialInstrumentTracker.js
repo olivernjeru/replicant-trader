@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import USEquitiesFinancialInstrumentTracker from './USEquitiesFinancialInstrumentTracker';
+import USEquitiesDailyOpenCloseFinancialInstrumentTracker from './USEquitiesDailyOpenCloseFinancialInstrumentTracker';
 import KenyaEquitiesFinancialInstrumentTracker from './KenyaEquitiesFinancialInstrumentTracker';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -77,7 +77,7 @@ export default function FinancialInstrumentTracker() {
             <MenuItem value="kenya">Kenya Equities</MenuItem>
           </Select>
         </FormControl>
-        {selectedOption === 'us' ? <USEquitiesFinancialInstrumentTracker /> : <KenyaEquitiesFinancialInstrumentTracker />}
+        {selectedOption === 'us' ? <USEquitiesDailyOpenCloseFinancialInstrumentTracker /> : <KenyaEquitiesFinancialInstrumentTracker />}
       </div>
     </ThemeProvider>
   );
