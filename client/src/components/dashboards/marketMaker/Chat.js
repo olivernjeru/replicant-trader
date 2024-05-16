@@ -136,7 +136,7 @@ export default function Chat() {
   };
 
   return (
-    <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240', ml: 3 }}>
+    <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240' }}>
       <Box sx={{ ml: -3, padding: 0 }}>
         <TextField
           label="Search"
@@ -182,12 +182,12 @@ export default function Chat() {
       </Box>
       <Box
         sx={{
-          height: "40vh",
-          width: '350px',
+          height: "45vh",
+          width: '50%',
           display: "flex",
           flexDirection: "column",
           padding: '1%',
-          mr: -3,
+          mr: 1,
           overflowY: 'auto' // Enable vertical scrolling
         }}
       >

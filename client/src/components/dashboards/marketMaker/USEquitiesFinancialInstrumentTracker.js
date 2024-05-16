@@ -110,7 +110,7 @@ export default function USEquitiesFinancialInstrumentTracker() {
   }, []);
 
   return (
-    <Container>
+    <Container sx={{width: '50%', ml: '-2%'}}>
       {isLoading ? (
           <CircularProgress sx={{ml:30, mt:10}} />
       ) : (

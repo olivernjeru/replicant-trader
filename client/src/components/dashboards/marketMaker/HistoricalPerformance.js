@@ -78,8 +78,8 @@ export default function HistoricalPerformanceTracker() {
 
         if (!chartInstanceRef.current) {
             chartInstanceRef.current = createChart(chartContainerRef.current, {
-                width: 600,
-                height: 230,
+                width: 850,
+                height: 300,
                 layout: {
                     backgroundColor: '#FFFFFF',
                 },

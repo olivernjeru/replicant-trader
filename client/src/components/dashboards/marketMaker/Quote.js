@@ -69,17 +69,16 @@ export default function Quote() {
 
     return (
         <ThemeProvider theme={defaultTheme}>
-            <Container component="main" maxWidth="sm">
                 <CssBaseline />
                 <Box
                     sx={{
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: 'center',
+                        // alignItems: 'center',
                     }}
                 >
                     <form onSubmit={sendQuote} noValidate >
-                        <Box sx={{ display: 'flex' }}>
+                        <Box>
                             <TextField
                                 margin="normal"
                                 required
@@ -130,6 +129,7 @@ export default function Quote() {
                                 onChange={handleFormChange}
                             />
                         </Box>
+                        <Box>
                         <TextField
                             margin="normal"
                             required
@@ -141,7 +141,9 @@ export default function Quote() {
                             value={formData.validFor}
                             onChange={handleFormChange}
                         />
+                        </Box>
                         {formData.error && <Typography color="error" variant="body2">{formData.error}</Typography>}
+                        <Box sx={{width: '55%'}}>
                         <Button
                             type="submit"
                             fullWidth
@@ -150,10 +152,10 @@ export default function Quote() {
                         >
                             SEND QUOTE
                         </Button>
+                        </Box>
                     </form>
                     <QuotesTable />
                 </Box>
-            </Container>
         </ThemeProvider>
     );
 }
