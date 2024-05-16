@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { auth } from '../../../firebase';
+import { auth, firestoredb } from '../../../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
-export default function PrivateRoutes() {
+export default function PrivateRoutes({ allowedRole }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            setUser(user);
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(firestoredb, 'user-details', user.uid));
+                setUser({ ...user, role: userDoc.data().tradingNo });
+            } else {
+                setUser(null);
+            }
             setLoading(false);
         });
 
-        // Clean up function to unsubscribe when component unmounts
         return unsubscribe;
     }, []);
 
@@ -20,11 +25,16 @@ export default function PrivateRoutes() {
         return <div>Loading...</div>; // Show loading indicator while checking authentication state
     }
 
-    // If user is not logged in, redirect to login page
     if (!user) {
         return <Navigate to="login" />;
     }
 
-    // If user is logged in, render the protected routes
+    // Check if the user has the correct role
+    if (user.role.startsWith('MM') && allowedRole === 'client') {
+        return <Navigate to="/mm-dashboard" />;
+    } else if (user.role.startsWith('C') && allowedRole === 'market-maker') {
+        return <Navigate to="/client" />;
+    }
+
     return <Outlet />;
 }

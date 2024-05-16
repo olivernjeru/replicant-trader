@@ -1,3 +1,4 @@
+// Index.js
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
@@ -19,7 +20,7 @@ const root = createRoot(container);
 
 root.render(
   <Router>
-    <AuthProvider> {/* Wrap your routes with AuthProvider */}
+    <AuthProvider>
       <Routes>
         <Route element={<ReversePrivateRoutes />}>
           <Route path="/" element={<App />} />
@@ -27,11 +28,15 @@ root.render(
           <Route path="reset-password" element={<ResetPasswordPage />} />
           <Route path="sign-up" element={<SignUpPage />} />
         </Route>
-        <Route element={<PrivateRoutes />}>
+        <Route element={<PrivateRoutes allowedRole="market-maker" />}>
           <Route path='mm-dashboard' element={<MarketMakerDashboardPage />} />
+        </Route>
+        <Route element={<PrivateRoutes allowedRole="client" />}>
+          <Route path='client' element={<ClientDashboardPage />} />
+        </Route>
+        <Route element={<PrivateRoutes allowedRole="both" />}>
           <Route path='account-settings' element={<AccountSettingsPage />} />
           <Route path='account-profile' element={<AccountProfilePage />} />
-          <Route path='client' element={<ClientDashboardPage />} />
         </Route>
       </Routes>
     </AuthProvider>

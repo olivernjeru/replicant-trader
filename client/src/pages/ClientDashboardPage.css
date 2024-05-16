@@ -1,6 +1,13 @@
-.ClientDashboard {
+:root {
+    --primary-background-color: #0A192F;
+    --secondary-background-color: #112240;
+    --primary-text-color: #FFFFFF;
+    --primary-button-color: #1F63E8;
+  }
+
+  .ClientDashboard {
     height: 92.4vh;
-    background-color: #0A192F;
+    background-color: var(--primary-background-color);
 }
 
 .ClientTop,
