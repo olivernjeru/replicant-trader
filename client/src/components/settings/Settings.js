@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
-import defaultTheme from '../styleUtilities/DefaultTheme';
-import { ThemeProvider } from '@emotion/react';
-import Box from '@mui/material/Box';
+import * as React from 'react';
+import Button from '@mui/material/Button';
+import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
-import { Button, CircularProgress, Typography } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import { ThemeProvider } from '@mui/material/styles';
+import { useState } from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
+import defaultTheme from '../styleUtilities/DefaultTheme';
 import { useAuth } from '../authentication/authContext/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import Container from '@mui/material/Container';
+import { Box } from '@mui/material';
+import './Settings.css';
 
 export default function Settings() {
     const { updatePassword } = useAuth();
@@ -41,76 +46,70 @@ export default function Settings() {
 
     return (
         <ThemeProvider theme={defaultTheme}>
-            <Box sx={{
-                height: '92.4vh',
-                background: '#0A192F',
-                borderRadius: 0,
-            }}>
-                {loading ? (
-                    <CircularProgress sx={{ mt: 15, mb: 1, ml: '50%' }} />
-                ) : (
-                    <>
-                        <Typography variant='h4' sx={{ textAlign: 'center' }}>Password</Typography>
-                        <Container>
-                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        width: '25%',
-                                    }}
+            <Container component="main" maxWidth="sm" sx={{ padding: 1 }}>
+                <CssBaseline />
+                <Box
+                    sx={{
+                        marginTop: 8,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '50vh',
+                    }}
+                >
+                    {loading ? ( // Render loading indicator if loading is true
+                        <CircularProgress sx={{ mt: 1 }} />
+                    ) : (
+                        <>
+                            <Typography component="h1" variant="h5">
+                                UPDATE PASSWORD
+                            </Typography>
+                            <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2, display: 'flex', flexDirection: 'column' }}>
+                                <TextField
+                                    margin="normal"
+                                    required
+                                    id="currentPassword"
+                                    label="Current Password"
+                                    name="current-password"
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    autoFocus
+                                />
+                                <TextField
+                                    margin="normal"
+                                    required
+                                    id="new password"
+                                    label="New Password"
+                                    name="new-password"
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                />
+                                <TextField
+                                    margin="normal"
+                                    required
+                                    id="confirm new password"
+                                    label="Confirm New Password"
+                                    name="confirm-new-password"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                />
+                                {error && <Typography color="error">{error}</Typography>}
+                                <Button
+                                    type="submit"
+                                    onClick={handleSubmit} // Call handleSubmit on button click
+                                    variant="contained"
                                 >
-                                    <Typography variant='p'>Update password</Typography>
-                                    <TextField
-                                        margin="normal"
-                                        required
-                                        id="currentPassword"
-                                        label="Current Password"
-                                        name="current-password"
-                                        type="password"
-                                        value={currentPassword}
-                                        onChange={(e) => setCurrentPassword(e.target.value)}
-                                        autoFocus
-                                        sx={{ margin: 1 }}
-                                    />
-                                    <TextField
-                                        margin="normal"
-                                        required
-                                        id="new password"
-                                        label="New Password"
-                                        name="new-password"
-                                        type="password"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        sx={{ margin: 1 }}
-                                    />
-                                    <TextField
-                                        margin="normal"
-                                        required
-                                        id="confirm new password"
-                                        label="Confirm New Password"
-                                        name="confirm-new-password"
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        sx={{ margin: 1 }}
-                                    />
-                                    {error && <Typography color="error">{error}</Typography>}
-                                    <Button
-                                        type="submit"
-                                        onClick={handleSubmit} // Call handleSubmit on button click
-                                        variant="contained"
-                                        sx={{ mt: 0, mb: 1 }}
-                                    >
-                                        UPDATE
-                                    </Button>
-                                </Box>
+                                    UPDATE
+                                </Button>
                             </Box>
-                        </Container>
-                    </>
-                )}
-            </Box>
+                        </>
+                    )}
+                </Box>
+            </Container>
         </ThemeProvider>
     );
 }

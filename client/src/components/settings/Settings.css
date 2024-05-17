@@ -1,0 +1,15 @@
+:root {
+  --primary-background-color: #0A192F;
+  --secondary-background-color: #112240;
+  --primary-text-color: #FFFFFF;
+  --primary-button-color: #1F63E8;
+}
+
+* {
+  color: var(--primary-text-color);
+}
+
+.AccountSettings {
+  background-color: var(--primary-background-color);
+  height: 92.4vh;
+}
