@@ -5,43 +5,8 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-
-const theme = createTheme({
-  components: {
-    MuiSelect: {
-      styleOverrides: {
-        select: {
-          color: 'white',
-        },
-      },
-    },
-    MuiInputLabel: {
-      styleOverrides: {
-        root: {
-          color: 'white',
-        },
-      },
-    },
-    MuiFormControl: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            '& fieldset': {
-              borderColor: 'white',
-            },
-            '&:hover fieldset': {
-              borderColor: 'white',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: 'white',
-            },
-          },
-        },
-      },
-    },
-  },
-});
+import { ThemeProvider } from '@mui/material/styles';
+import defaultTheme from '../../styleUtilities/DefaultTheme';
 
 export default function FinancialInstrumentTracker() {
   const [selectedOption, setSelectedOption] = useState('us');
@@ -62,7 +27,7 @@ export default function FinancialInstrumentTracker() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={defaultTheme}>
       <div>
         <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
           <InputLabel id="select-country-label">Country</InputLabel>
