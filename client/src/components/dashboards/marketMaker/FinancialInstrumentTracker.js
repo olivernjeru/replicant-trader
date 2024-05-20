@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import USEquitiesFinancialInstrumentTracker from './USEquitiesFinancialInstrumentTracker';
 import KenyaEquitiesFinancialInstrumentTracker from './KenyaEquitiesFinancialInstrumentTracker';
+import TradingViewUSStockScreener from './TradingViewUSStockScreener';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
@@ -40,9 +41,12 @@ export default function FinancialInstrumentTracker() {
           >
             <MenuItem value="us">US Mag 5 Equities</MenuItem>
             <MenuItem value="kenya">Kenya Equities</MenuItem>
+            <MenuItem value="trading-view-screener">Trading View Screener</MenuItem>
           </Select>
         </FormControl>
-        {selectedOption === 'us' ? <USEquitiesFinancialInstrumentTracker /> : <KenyaEquitiesFinancialInstrumentTracker />}
+        {selectedOption === 'us' && <USEquitiesFinancialInstrumentTracker />}
+        {selectedOption === 'kenya' && <KenyaEquitiesFinancialInstrumentTracker />}
+        {selectedOption === 'trading-view-screener' && <TradingViewUSStockScreener />}
       </div>
     </ThemeProvider>
   );
