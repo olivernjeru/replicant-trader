@@ -6,7 +6,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { auth, firestoredb, storage } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect, useState } from "react";
 import { getDoc, doc } from "firebase/firestore";
@@ -19,7 +19,9 @@ export default function Chat() {
   const [error, setError] = React.useState(null);
   const [user] = useAuthState(auth);
   const [marketMakers, setMarketMakers] = useState([]);
-  const [marketMakerData, setClientData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
+  const [marketMakerData, setMarketMakerData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMarketMakerId, setSelectedMarketMakerId] = useState(null);
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -69,7 +71,6 @@ export default function Chat() {
     fetchMarketMakers();
   }, []);
 
-  const [searchTerm, setSearchTerm] = React.useState("");
 
   const handleChange = (event) => {
     setSearchTerm(event.target.value);
@@ -111,27 +112,25 @@ export default function Chat() {
     }
   }, [messages]);
 
-  const handleClientClick = async (clientId) => {
+  const handleMarketMakerClick = async (marketMakerId) => {
+    setSelectedMarketMakerId(marketMakerId);
     try {
-      const clientDocRef = doc(firestoredb, 'user-details', clientId);
-      const clientDocSnapshot = await getDoc(clientDocRef);
+      const marketMakerDocRef = doc(firestoredb, 'user-details', marketMakerId);
+      const marketMakerDocSnapshot = await getDoc(marketMakerDocRef);
 
-      if (clientDocSnapshot.exists()) {
-        const clientData = clientDocSnapshot.data();
-        const { displayName, nationalId } = clientData;
+      if (marketMakerDocSnapshot.exists()) {
+        const marketMakerData = marketMakerDocSnapshot.data();
+        const { displayName, nationalId } = marketMakerData;
 
-        // Fetch the profile picture URL from Firebase Storage
-        const storageRef = ref(storage, `user_details/profile_pictures/${clientId}`); // Adjust the path as per your storage structure
+        const storageRef = ref(storage, `user_details/profile_pictures/${marketMakerId}`);
         const profilePictureUrl = await getDownloadURL(storageRef);
 
-        // Update the state with the client's data
-        setClientData({ profilePictureUrl, displayName, nationalId });
+        setMarketMakerData({ profilePictureUrl, displayName, nationalId });
       } else {
-        // If client does not exist, display blank
-        setClientData({ profilePictureUrl: "", displayName: "", nationalId: "" });
+        setMarketMakerData({ profilePictureUrl: "", displayName: "", nationalId: "" });
       }
     } catch (error) {
-      console.error('Error fetching client details:', error);
+      console.error('Error fetching market maker details:', error);
     }
   };
 
@@ -171,9 +170,9 @@ export default function Chat() {
         />
         <Divider sx={{ backgroundColor: 'white' }} />
         <List>
-          {marketMakers.map((marketMaker) => (
+          {marketMakers.filter(marketMaker => marketMaker.displayName.toLowerCase().includes(searchTerm.toLowerCase())).map((marketMaker) => (
             <ListItem key={marketMaker.id} disablePadding>
-              <ListItemButton onClick={() => handleClientClick(marketMaker.id)}>
+              <ListItemButton onClick={() => handleMarketMakerClick(marketMaker.id)}>
                 <ListItemText primary={marketMaker.displayName} />
               </ListItemButton>
             </ListItem>
