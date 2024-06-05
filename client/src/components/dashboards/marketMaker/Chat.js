@@ -1,45 +1,48 @@
 import * as React from "react";
-import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton } from "@mui/material";
-import Divider from "@mui/material/Divider";
-import Container from "@mui/material/Container";
+import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, Divider, Container, Avatar, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
-import { Avatar } from "@mui/material";
-import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { auth, firestoredb, storage } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, limit } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect, useState } from "react";
-import { getDoc, doc } from "firebase/firestore";
 import { ref, getDownloadURL } from 'firebase/storage';
+import { useState, useEffect, useRef } from "react";
 
 export default function Chat() {
-  const [messages, setMessages] = React.useState([]);
-  const [message, setMessage] = React.useState("");
-  const chatContainerRef = React.useRef(null);
-  const [error, setError] = React.useState(null);
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
+  const chatContainerRef = useRef(null);
+  const [error, setError] = useState(null);
   const [user] = useAuthState(auth);
   const [clients, setClients] = useState([]);
   const [clientData, setClientData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState(null);
 
   const sendMessage = async (event) => {
     event.preventDefault();
     if (message.trim() === "") {
       setError("Enter valid message");
-      setTimeout(() => setError(null), 1500); // Remove error after 3 seconds
+      setTimeout(() => setError(null), 1500);
       return;
     }
     const { uid, email } = auth.currentUser;
+    const roomId = [uid, selectedClientId].sort().join("_");
+
     try {
-      await addDoc(collection(firestoredb, "messages"), {
+      const roomDocRef = doc(collection(firestoredb, 'rooms'), roomId);
+      const messagesSubCollectionRef = collection(roomDocRef, 'messages');
+
+      await addDoc(messagesSubCollectionRef, {
         text: message,
         name: email,
         createdAt: serverTimestamp(),
         uid,
       });
+
       setMessage("");
     } catch (error) {
-      setError("Failed to send message"); // Handle any errors from Firestore
-      setTimeout(() => setError(null), 1500); // Remove error after 3 seconds
+      setError("Failed to send message");
+      setTimeout(() => setError(null), 1500);
     }
   };
 
@@ -69,49 +72,50 @@ export default function Chat() {
     fetchClients();
   }, []);
 
-  const [searchTerm, setSearchTerm] = React.useState("");
-
   const handleChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
+    let unsubscribe;
     const fetchMessages = async () => {
-      const messagesQuery = query(
-        collection(firestoredb, "messages"),
-        orderBy("createdAt", "desc"),
-        // limit(250)
-      );
-      const unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
-        const fetchedMessages = [];
-        QuerySnapshot.forEach((doc) => {
-          fetchedMessages.push({ ...doc.data(), id: doc.id });
-        });
-        const sortedMessages = fetchedMessages.sort(
-          (a, b) => a.createdAt - b.createdAt
+      if (selectedClientId) {
+        const roomId = [auth.currentUser.uid, selectedClientId].sort().join("_");
+        const roomDocRef = doc(firestoredb, 'rooms', roomId);
+        const messagesQuery = query(
+          collection(roomDocRef, 'messages'),
+          orderBy("createdAt", "asc")
         );
-        setMessages(sortedMessages);
+        unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
+          const fetchedMessages = [];
+          QuerySnapshot.forEach((doc) => {
+            fetchedMessages.push({ ...doc.data(), id: doc.id });
+          });
+          setMessages(fetchedMessages);
 
-        // Scroll to the bottom of the chat area if chatContainerRef.current exists
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTop =
-            chatContainerRef.current.scrollHeight;
-        }
-      });
-      return unsubscribe;
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop =
+              chatContainerRef.current.scrollHeight;
+          }
+        });
+      } else {
+        setMessages([]);
+      }
     };
     fetchMessages();
-  }, []);
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [selectedClientId]);
 
-  // Scroll to the bottom of the chat container when messages are updated
-  React.useEffect(() => {
-    // Scroll to the bottom of the chat area if chatContainerRef.current exists
+  useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
   const handleClientClick = async (clientId) => {
+    setSelectedClientId(clientId);
     try {
       const clientDocRef = doc(firestoredb, 'user-details', clientId);
       const clientDocSnapshot = await getDoc(clientDocRef);
@@ -120,14 +124,11 @@ export default function Chat() {
         const clientData = clientDocSnapshot.data();
         const { displayName, nationalId } = clientData;
 
-        // Fetch the profile picture URL from Firebase Storage
-        const storageRef = ref(storage, `user_details/profile_pictures/${clientId}`); // Adjust the path as per your storage structure
+        const storageRef = ref(storage, `user_details/profile_pictures/${clientId}`);
         const profilePictureUrl = await getDownloadURL(storageRef);
 
-        // Update the state with the client's data
         setClientData({ profilePictureUrl, displayName, nationalId });
       } else {
-        // If client does not exist, display blank
         setClientData({ profilePictureUrl: "", displayName: "", nationalId: "" });
       }
     } catch (error) {
@@ -156,22 +157,22 @@ export default function Chat() {
             ),
             sx: {
               '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'white', // Change outline color
+                borderColor: 'white',
               },
               '& input': {
-                color: 'white', // Change input text color
+                color: 'white',
               }
             }
           }}
           InputLabelProps={{
             style: {
-              color: 'white', // Change label text color
+              color: 'white',
             }
           }}
         />
         <Divider sx={{ backgroundColor: 'white' }} />
         <List>
-          {clients.map((client) => (
+          {clients.filter(client => client.displayName.toLowerCase().includes(searchTerm.toLowerCase())).map((client) => (
             <ListItem key={client.id} disablePadding>
               <ListItemButton onClick={() => handleClientClick(client.id)}>
                 <ListItemText primary={client.displayName} />
@@ -188,7 +189,7 @@ export default function Chat() {
           flexDirection: "column",
           padding: '1%',
           mr: 1,
-          overflowY: 'auto' // Enable vertical scrolling
+          overflowY: 'auto'
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: 1 }}>
@@ -232,14 +233,13 @@ export default function Chat() {
               padding: '10px',
               borderRadius: '8px',
               zIndex: '999',
-              transition: 'opacity 0.5s', // Add transition for smooth appearance
-              opacity: 1, // Initially set to visible
+              transition: 'opacity 0.5s',
+              opacity: 1,
             }}
           >
             {error}
           </Paper>
         )}
-
         <TextField
           label="Type a message"
           fullWidth
@@ -256,16 +256,16 @@ export default function Chat() {
           InputProps={{
             sx: {
               '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'white', // Change outline color
+                borderColor: 'white',
               },
               '& input': {
-                color: 'white', // Change input text color
+                color: 'white',
               }
             }
           }}
           InputLabelProps={{
             style: {
-              color: 'white', // Change label text color
+              color: 'white',
             }
           }}
         />
