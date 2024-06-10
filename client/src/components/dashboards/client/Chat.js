@@ -1,47 +1,55 @@
 import * as React from "react";
-import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton } from "@mui/material";
+import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, Badge } from "@mui/material";
 import Divider from "@mui/material/Divider";
 import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { auth, firestoredb, storage } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, getDoc, updateDoc, getDocs } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect, useState } from "react";
-import { getDoc, doc } from "firebase/firestore";
+import { useEffect, useState, useRef } from "react";
 import { ref, getDownloadURL } from 'firebase/storage';
 
 export default function Chat() {
-  const [messages, setMessages] = React.useState([]);
-  const [message, setMessage] = React.useState("");
-  const chatContainerRef = React.useRef(null);
-  const [error, setError] = React.useState(null);
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
+  const chatContainerRef = useRef(null);
+  const [error, setError] = useState(null);
   const [user] = useAuthState(auth);
   const [marketMakers, setMarketMakers] = useState([]);
   const [marketMakerData, setMarketMakerData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMarketMakerId, setSelectedMarketMakerId] = useState(null);
+  const [lastMessages, setLastMessages] = useState({});
+  const [unreadMessages, setUnreadMessages] = useState({});
 
   const sendMessage = async (event) => {
     event.preventDefault();
     if (message.trim() === "") {
-      setError("Enter valid message");
-      setTimeout(() => setError(null), 1500); // Remove error after 3 seconds
+      setError("Enter a valid message");
+      setTimeout(() => setError(null), 1500);
       return;
     }
     const { uid, email } = auth.currentUser;
+    const roomId = [uid, selectedMarketMakerId].sort().join("_");
+
     try {
-      await addDoc(collection(firestoredb, "messages"), {
+      const roomDocRef = doc(collection(firestoredb, 'rooms'), roomId);
+      const messagesSubCollectionRef = collection(roomDocRef, 'messages');
+
+      await addDoc(messagesSubCollectionRef, {
         text: message,
-        name: email,
+        email: email,
         createdAt: serverTimestamp(),
         uid,
+        read: false,
       });
+
       setMessage("");
     } catch (error) {
-      setError("Failed to send message"); // Handle any errors from Firestore
-      setTimeout(() => setError(null), 1500); // Remove error after 3 seconds
+      setError("Failed to send message");
+      setTimeout(() => setError(null), 1500);
     }
   };
 
@@ -71,42 +79,79 @@ export default function Chat() {
     fetchMarketMakers();
   }, []);
 
-
   const handleChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
-  React.useEffect(() => {
-    const fetchMessages = async () => {
-      const messagesQuery = query(
-        collection(firestoredb, "messages"),
-        orderBy("createdAt", "desc"),
-        // limit(250)
-      );
-      const unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
-        const fetchedMessages = [];
-        QuerySnapshot.forEach((doc) => {
-          fetchedMessages.push({ ...doc.data(), id: doc.id });
-        });
-        const sortedMessages = fetchedMessages.sort(
-          (a, b) => a.createdAt - b.createdAt
-        );
-        setMessages(sortedMessages);
+  const markMessagesAsRead = async (marketMakerId) => {
+    const roomId = [auth.currentUser.uid, marketMakerId].sort().join("_");
+    const roomDocRef = doc(firestoredb, 'rooms', roomId);
+    const messagesQuery = query(
+      collection(roomDocRef, 'messages'),
+      orderBy("createdAt", "asc")
+    );
 
-        // Scroll to the bottom of the chat area if chatContainerRef.current exists
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTop =
-            chatContainerRef.current.scrollHeight;
-        }
-      });
-      return unsubscribe;
+    const querySnapshot = await getDocs(messagesQuery);
+    querySnapshot.forEach(async (messageDoc) => {
+      if (messageDoc.data().uid !== auth.currentUser.uid && !messageDoc.data().read) {
+        await updateDoc(doc(roomDocRef, 'messages', messageDoc.id), { read: true });
+      }
+    });
+
+    setUnreadMessages((prev) => ({
+      ...prev,
+      [marketMakerId]: false,
+    }));
+  };
+
+  useEffect(() => {
+    let unsubscribe;
+    const fetchMessages = async () => {
+      if (selectedMarketMakerId) {
+        const roomId = [auth.currentUser.uid, selectedMarketMakerId].sort().join("_");
+        const roomDocRef = doc(firestoredb, 'rooms', roomId);
+        const messagesQuery = query(
+          collection(roomDocRef, 'messages'),
+          orderBy("createdAt", "asc")
+        );
+        unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
+          const fetchedMessages = [];
+          QuerySnapshot.forEach((doc) => {
+            const messageData = doc.data();
+            fetchedMessages.push({ ...messageData, id: doc.id });
+
+            // Update last message timestamp and unread status
+            setLastMessages((prev) => ({
+              ...prev,
+              [selectedMarketMakerId]: messageData.createdAt?.toDate(),
+            }));
+            if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
+              setUnreadMessages((prev) => ({
+                ...prev,
+                [selectedMarketMakerId]: true,
+              }));
+            }
+          });
+          setMessages(fetchedMessages);
+
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          }
+
+          // Mark messages as read when fetching new messages if the chat area is already active
+          markMessagesAsRead(selectedMarketMakerId);
+        });
+      } else {
+        setMessages([]);
+      }
     };
     fetchMessages();
-  }, []);
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [selectedMarketMakerId]);
 
-  // Scroll to the bottom of the chat container when messages are updated
-  React.useEffect(() => {
-    // Scroll to the bottom of the chat area if chatContainerRef.current exists
+  useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
@@ -126,13 +171,67 @@ export default function Chat() {
         const profilePictureUrl = await getDownloadURL(storageRef);
 
         setMarketMakerData({ profilePictureUrl, displayName, nationalId });
+
+        // Mark messages as read
+        await markMessagesAsRead(marketMakerId);
       } else {
-        setMarketMakerData({ profilePictureUrl: "", displayName: "", nationalId: "" });
+        console.log('No such market maker document!');
       }
     } catch (error) {
       console.error('Error fetching market maker details:', error);
     }
   };
+
+  useEffect(() => {
+    const unsubscribeList = [];
+
+    const listenForMessages = (marketMakerId) => {
+      const roomId = [auth.currentUser.uid, marketMakerId].sort().join("_");
+      const roomDocRef = doc(firestoredb, 'rooms', roomId);
+      const messagesQuery = query(
+        collection(roomDocRef, 'messages'),
+        orderBy("createdAt", "asc")
+      );
+
+      const unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
+        let hasUnreadMessages = false;
+        let lastMessageTime = null;
+
+        querySnapshot.forEach((doc) => {
+          const messageData = doc.data();
+          if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
+            hasUnreadMessages = true;
+          }
+          lastMessageTime = messageData.createdAt?.toDate();
+        });
+
+        setUnreadMessages((prev) => ({
+          ...prev,
+          [marketMakerId]: hasUnreadMessages,
+        }));
+
+        setLastMessages((prev) => ({
+          ...prev,
+          [marketMakerId]: lastMessageTime,
+        }));
+      });
+
+      return unsubscribe;
+    };
+
+    marketMakers.forEach((marketMaker) => {
+      const unsubscribe = listenForMessages(marketMaker.id);
+      unsubscribeList.push(unsubscribe);
+    });
+
+    return () => {
+      unsubscribeList.forEach(unsubscribe => unsubscribe());
+    };
+  }, [marketMakers]);
+
+  const filteredMarketMakers = marketMakers.filter((marketMaker) =>
+    marketMaker.displayName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240' }}>
@@ -142,7 +241,7 @@ export default function Chat() {
           variant="outlined"
           size="small"
           fullWidth
-          sx={{ mb: 1, mt: 1 }}
+          sx={{ mb: 1, mt: 1, }}
           value={searchTerm}
           onChange={handleChange}
           InputProps={{
@@ -155,30 +254,47 @@ export default function Chat() {
             ),
             sx: {
               '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'white', // Change outline color
+                borderColor: 'white',
               },
               '& input': {
-                color: 'white', // Change input text color
+                color: 'white',
               }
             }
           }}
           InputLabelProps={{
             style: {
-              color: 'white', // Change label text color
+              color: 'white',
             }
           }}
         />
         <Divider sx={{ backgroundColor: 'white' }} />
         <List>
-          {marketMakers.filter(marketMaker => marketMaker.displayName.toLowerCase().includes(searchTerm.toLowerCase())).map((marketMaker) => (
+          {filteredMarketMakers.map((marketMaker) => (
             <ListItem key={marketMaker.id} disablePadding>
               <ListItemButton onClick={() => handleMarketMakerClick(marketMaker.id)}>
-                <ListItemText primary={marketMaker.displayName} />
+                <ListItemText
+                  primary={
+                    <Typography variant="subtitle1" sx={{ color: 'white' }}>
+                      {marketMaker.displayName}
+                    </Typography>
+                  }
+                  secondary={
+                    <Typography variant="body2" sx={{ color: 'gray' }}>
+                      {lastMessages[marketMaker.id] ? lastMessages[marketMaker.id].toLocaleString() : "Start a new chat"}
+                    </Typography>
+                  }
+                />
+                <Badge
+                  color="primary"
+                  variant="dot"
+                  invisible={!unreadMessages[marketMaker.id]}
+                />
               </ListItemButton>
             </ListItem>
           ))}
         </List>
       </Box>
+      <Divider orientation="vertical" flexItem sx={{ backgroundColor: "white", mr: 2 }} />
       <Box
         sx={{
           height: "43vh",
@@ -187,13 +303,19 @@ export default function Chat() {
           flexDirection: "column",
           padding: '1%',
           mr: 1,
-          overflowY: 'auto' // Enable vertical scrolling
+          overflowY: 'auto'
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: 1 }}>
-          <Avatar src={marketMakerData.profilePictureUrl} sx={{ width: 32, height: 32 }} />
-          <Typography>{marketMakerData.displayName}</Typography>
-          <Typography>{marketMakerData.nationalId}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Avatar src={marketMakerData.profilePictureUrl} alt="Market Maker" sx={{ width: 50, height: 50, mr: 2 }} />
+          <Box>
+            <Typography variant="subtitle1" sx={{ color: 'white' }}>
+              {marketMakerData.displayName}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'gray' }}>
+              National ID: {marketMakerData.nationalId}
+            </Typography>
+          </Box>
         </Box>
         <Divider sx={{ backgroundColor: 'white' }} />
         <Box
@@ -215,8 +337,13 @@ export default function Chat() {
             },
           }}
         >
-          {messages.map((message) => (
-            <Message key={message.id} message={message} currentUser={user} />
+          {messages.map(({ id, text, email, createdAt, uid }) => (
+            <Box key={id} sx={{ textAlign: uid === auth.currentUser.uid ? 'right' : 'left' }}>
+              <Typography variant="body2" color="#999999">
+                {email} - {createdAt?.toDate().toLocaleString()}
+              </Typography>
+              <Typography variant="body1">{text}</Typography>
+            </Box>
           ))}
         </Box>
         {error && (
@@ -231,77 +358,57 @@ export default function Chat() {
               padding: '10px',
               borderRadius: '8px',
               zIndex: '999',
-              transition: 'opacity 0.5s', // Add transition for smooth appearance
-              opacity: 1, // Initially set to visible
+              transition: 'opacity 0.5s',
+              opacity: 1,
             }}
           >
             {error}
           </Paper>
         )}
-
-        <TextField
-          label="Type a message"
-          fullWidth
-          size="small"
-          variant="outlined"
-          value={message}
-          onChange={handleMessageChange}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              sendMessage(event);
-            }
+        <Paper
+          component="form"
+          onSubmit={sendMessage}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            padding: "2px 4px",
+            mt: 1,
+            boxShadow: "none",
+            backgroundColor: "transparent",
           }}
-          sx={{ mb: 1 }}
-          InputProps={{
-            sx: {
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'white', // Change outline color
-              },
-              '& input': {
-                color: 'white', // Change input text color
-              }
-            }
-          }}
-          InputLabelProps={{
-            style: {
-              color: 'white', // Change label text color
-            }
-          }}
-        />
-        <Button
-          fullWidth
-          color="primary"
-          variant="contained"
-          onClick={sendMessage}
         >
-          SEND MESSAGE
-        </Button>
+          <TextField
+            label="Type your message"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={message}
+            onChange={handleMessageChange}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'white',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'white',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'white',
+                },
+                '& input': {
+                  color: 'white',
+                }
+              }
+            }}
+            InputLabelProps={{
+              style: { color: 'white' }
+            }}
+          />
+          <Button type="submit" variant="contained" sx={{ ml: 1 }}>
+            Send
+          </Button>
+        </Paper>
       </Box>
     </Container>
   );
-};
-
-const Message = ({ message, currentUser }) => {
-  const isCurrentUserMessage = message.uid === currentUser.uid;
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: isCurrentUserMessage ? "flex-end" : "flex-start",
-        mb: 1,
-        paddingTop: 0,
-      }}
-    >
-      <Paper
-        sx={{
-          backgroundColor: "transparent",
-          padding: 0,
-          boxShadow: "none",
-        }}
-      >
-        <Typography>{isCurrentUserMessage ? "You: " : message.name + ": "}{message.text}</Typography>
-      </Paper>
-    </Box>
-  );
-};
+}

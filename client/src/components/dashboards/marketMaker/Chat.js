@@ -1,27 +1,33 @@
 import * as React from "react";
-import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, Divider, Container, Avatar, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, Badge } from "@mui/material";
+import Divider from "@mui/material/Divider";
+import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
+import { Avatar } from "@mui/material";
+import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { auth, firestoredb, storage } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, getDoc, doc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, getDoc, updateDoc, getDocs } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { useEffect, useState } from "react";
 import { ref, getDownloadURL } from 'firebase/storage';
-import { useState, useEffect, useRef } from "react";
 
 export default function Chat() {
-  const [messages, setMessages] = useState([]);
-  const [message, setMessage] = useState("");
-  const chatContainerRef = useRef(null);
-  const [error, setError] = useState(null);
+  const [messages, setMessages] = React.useState([]);
+  const [message, setMessage] = React.useState("");
+  const chatContainerRef = React.useRef(null);
+  const [error, setError] = React.useState(null);
   const [user] = useAuthState(auth);
   const [clients, setClients] = useState([]);
   const [clientData, setClientData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientId, setSelectedClientId] = useState(null);
+  const [lastMessages, setLastMessages] = useState({});
+  const [unreadMessages, setUnreadMessages] = useState({});
 
   const sendMessage = async (event) => {
     event.preventDefault();
     if (message.trim() === "") {
-      setError("Enter valid message");
+      setError("Enter a valid message");
       setTimeout(() => setError(null), 1500);
       return;
     }
@@ -34,9 +40,10 @@ export default function Chat() {
 
       await addDoc(messagesSubCollectionRef, {
         text: message,
-        name: email,
+        email: email,
         createdAt: serverTimestamp(),
         uid,
+        read: false,
       });
 
       setMessage("");
@@ -76,6 +83,28 @@ export default function Chat() {
     setSearchTerm(event.target.value);
   };
 
+  const markMessagesAsRead = async (clientId) => {
+    const roomId = [auth.currentUser.uid, clientId].sort().join("_");
+    const roomDocRef = doc(firestoredb, 'rooms', roomId);
+    const messagesQuery = query(
+      collection(roomDocRef, 'messages'),
+      orderBy("createdAt", "asc")
+    );
+
+    const querySnapshot = await getDocs(messagesQuery);
+    querySnapshot.forEach(async (messageDoc) => {
+      if (messageDoc.data().uid !== auth.currentUser.uid && !messageDoc.data().read) {
+        await updateDoc(doc(roomDocRef, 'messages', messageDoc.id), { read: true });
+      }
+    });
+
+    setUnreadMessages((prev) => ({
+      ...prev,
+      [clientId]: false,
+    }));
+  };
+
+
   useEffect(() => {
     let unsubscribe;
     const fetchMessages = async () => {
@@ -89,14 +118,29 @@ export default function Chat() {
         unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
           const fetchedMessages = [];
           QuerySnapshot.forEach((doc) => {
-            fetchedMessages.push({ ...doc.data(), id: doc.id });
+            const messageData = doc.data();
+            fetchedMessages.push({ ...messageData, id: doc.id });
+
+            // Update last message timestamp and unread status
+            setLastMessages((prev) => ({
+              ...prev,
+              [selectedClientId]: messageData.createdAt?.toDate(),
+            }));
+            if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
+              setUnreadMessages((prev) => ({
+                ...prev,
+                [selectedClientId]: true,
+              }));
+            }
           });
           setMessages(fetchedMessages);
 
           if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop =
-              chatContainerRef.current.scrollHeight;
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
           }
+
+          // Mark messages as read when fetching new messages if the chat area is already active
+          markMessagesAsRead(selectedClientId);
         });
       } else {
         setMessages([]);
@@ -121,24 +165,78 @@ export default function Chat() {
       const clientDocSnapshot = await getDoc(clientDocRef);
 
       if (clientDocSnapshot.exists()) {
-        const clientData = clientDocSnapshot.data();
-        const { displayName, nationalId } = clientData;
+        const marketMakerData = clientDocSnapshot.data();
+        const { displayName, nationalId } = marketMakerData;
 
         const storageRef = ref(storage, `user_details/profile_pictures/${clientId}`);
         const profilePictureUrl = await getDownloadURL(storageRef);
 
         setClientData({ profilePictureUrl, displayName, nationalId });
+
+        // Mark messages as read
+        await markMessagesAsRead(clientId);
       } else {
-        setClientData({ profilePictureUrl: "", displayName: "", nationalId: "" });
+        console.log('No such client document!');
       }
     } catch (error) {
       console.error('Error fetching client details:', error);
     }
   };
 
+  useEffect(() => {
+    const unsubscribeList = [];
+
+    const listenForMessages = (clientId) => {
+      const roomId = [auth.currentUser.uid, clientId].sort().join("_");
+      const roomDocRef = doc(firestoredb, 'rooms', roomId);
+      const messagesQuery = query(
+        collection(roomDocRef, 'messages'),
+        orderBy("createdAt", "asc")
+      );
+
+      const unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
+        let hasUnreadMessages = false;
+        let lastMessageTime = null;
+
+        querySnapshot.forEach((doc) => {
+          const messageData = doc.data();
+          if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
+            hasUnreadMessages = true;
+          }
+          lastMessageTime = messageData.createdAt?.toDate();
+        });
+
+        setUnreadMessages((prev) => ({
+          ...prev,
+          [clientId]: hasUnreadMessages,
+        }));
+
+        setLastMessages((prev) => ({
+          ...prev,
+          [clientId]: lastMessageTime,
+        }));
+      });
+
+      return unsubscribe;
+    };
+
+    clients.forEach((client) => {
+      const unsubscribe = listenForMessages(client.id);
+      unsubscribeList.push(unsubscribe);
+    });
+
+    return () => {
+      unsubscribeList.forEach(unsubscribe => unsubscribe());
+    };
+  }, [clients]);
+
+  const filteredClients = clients.filter((client) =>
+    client.displayName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240' }}>
-      <Box sx={{ ml: -3, padding: 0 }}>
+      <Box sx={{ ml: -3, padding: 1, maxHeight: '43vh', overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#D9D9D9', borderRadius: '4px' }, '&::-webkit-scrollbar-track': { backgroundColor: '#112240' } }}>
         <TextField
           label="Search"
           variant="outlined"
@@ -172,15 +270,32 @@ export default function Chat() {
         />
         <Divider sx={{ backgroundColor: 'white' }} />
         <List>
-          {clients.filter(client => client.displayName.toLowerCase().includes(searchTerm.toLowerCase())).map((client) => (
+          {filteredClients.map((client) => (
             <ListItem key={client.id} disablePadding>
               <ListItemButton onClick={() => handleClientClick(client.id)}>
-                <ListItemText primary={client.displayName} />
+                <ListItemText
+                  primary={
+                    <Typography variant="subtitle1" sx={{ color: 'white' }}>
+                      {client.displayName}
+                    </Typography>
+                  }
+                  secondary={
+                    <Typography variant="body2" sx={{ color: 'gray' }}>
+                      {lastMessages[client.id] ? lastMessages[client.id].toLocaleString() : "Start a new chat"}
+                    </Typography>
+                  }
+                />
+                <Badge
+                  color="primary"
+                  variant="dot"
+                  invisible={!unreadMessages[client.id]}
+                />
               </ListItemButton>
             </ListItem>
           ))}
         </List>
       </Box>
+      <Divider orientation="vertical" flexItem sx={{ backgroundColor: "white", mr: 2 }} />
       <Box
         sx={{
           height: "45vh",
@@ -192,10 +307,16 @@ export default function Chat() {
           overflowY: 'auto'
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, mt: 1 }}>
-          <Avatar src={clientData.profilePictureUrl} sx={{ width: 32, height: 32 }} />
-          <Typography>{clientData.displayName}</Typography>
-          <Typography>{clientData.nationalId}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Avatar src={clientData.profilePictureUrl} alt="Client" sx={{ width: 50, height: 50, mr: 2 }} />
+          <Box>
+            <Typography variant="subtitle1" sx={{ color: 'white' }}>
+              {clientData.displayName}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'gray' }}>
+              National ID: {clientData.nationalId}
+            </Typography>
+          </Box>
         </Box>
         <Divider sx={{ backgroundColor: 'white' }} />
         <Box
@@ -217,8 +338,13 @@ export default function Chat() {
             },
           }}
         >
-          {messages.map((message) => (
-            <Message key={message.id} message={message} currentUser={user} />
+          {messages.map(({ id, text, email, createdAt, uid }) => (
+            <Box key={id} sx={{ textAlign: uid === auth.currentUser.uid ? 'right' : 'left' }}>
+              <Typography variant="body2" color="#999999">
+                {email} - {createdAt?.toDate().toLocaleString()}
+              </Typography>
+              <Typography variant="body1">{text}</Typography>
+            </Box>
           ))}
         </Box>
         {error && (
@@ -240,69 +366,51 @@ export default function Chat() {
             {error}
           </Paper>
         )}
-        <TextField
-          label="Type a message"
-          fullWidth
-          size="small"
-          variant="outlined"
-          value={message}
-          onChange={handleMessageChange}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              sendMessage(event);
-            }
+        <Paper
+          component="form"
+          onSubmit={sendMessage}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            padding: "2px 4px",
+            mt: 1,
+            boxShadow: "none",
+            backgroundColor: "transparent",
           }}
-          sx={{ mb: 1 }}
-          InputProps={{
-            sx: {
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'white',
-              },
-              '& input': {
-                color: 'white',
-              }
-            }
-          }}
-          InputLabelProps={{
-            style: {
-              color: 'white',
-            }
-          }}
-        />
-        <Button
-          fullWidth
-          color="primary"
-          variant="contained"
-          onClick={sendMessage}
         >
-          SEND MESSAGE
-        </Button>
+          <TextField
+            label="Type your message"
+            variant="outlined"
+            size="small"
+            fullWidth
+            value={message}
+            onChange={handleMessageChange}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'white',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'white',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'white',
+                },
+                '& input': {
+                  color: 'white',
+                }
+              }
+            }}
+            InputLabelProps={{
+              style: { color: 'white' }
+            }}
+          />
+          <Button type="submit" variant="contained" sx={{ ml: 1 }}>
+            Send
+          </Button>
+        </Paper>
       </Box>
     </Container>
   );
 };
 
-const Message = ({ message, currentUser }) => {
-  const isCurrentUserMessage = message.uid === currentUser.uid;
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: isCurrentUserMessage ? "flex-end" : "flex-start",
-        mb: 1,
-        paddingTop: 0,
-      }}
-    >
-      <Paper
-        sx={{
-          backgroundColor: "transparent",
-          padding: 0,
-          boxShadow: "none",
-        }}
-      >
-        <Typography>{isCurrentUserMessage ? "You: " : message.name + ": "}{message.text}</Typography>
-      </Paper>
-    </Box>
-  );
-};
