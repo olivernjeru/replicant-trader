@@ -1,6 +1,6 @@
 # REPLICANT TRADER
 
-## A trade faciliating platform
+## A trade simulation faciliating platform
 
 ### HOW TO INSTALL AND RUN CLIENT
 
