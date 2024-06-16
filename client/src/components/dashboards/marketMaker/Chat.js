@@ -3,22 +3,20 @@ import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, 
 import Divider from "@mui/material/Divider";
 import Container from "@mui/material/Container";
 import SearchIcon from '@mui/icons-material/Search';
-import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import { auth, firestoredb, storage } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, getDoc, updateDoc, getDocs } from "firebase/firestore";
+import { auth, firestoredb } from "../../../firebase";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, getDocs } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect, useState } from "react";
-import { ref, getDownloadURL } from 'firebase/storage';
+import { useEffect, useState, useRef } from "react";
+import ClientContext from "./ClientContext";
 
 export default function Chat() {
-  const [messages, setMessages] = React.useState([]);
-  const [message, setMessage] = React.useState("");
-  const chatContainerRef = React.useRef(null);
-  const [error, setError] = React.useState(null);
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
+  const chatContainerRef = useRef(null);
+  const [error, setError] = useState(null);
   const [user] = useAuthState(auth);
   const [clients, setClients] = useState([]);
-  const [clientData, setClientData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [lastMessages, setLastMessages] = useState({});
@@ -104,7 +102,6 @@ export default function Chat() {
     }));
   };
 
-
   useEffect(() => {
     let unsubscribe;
     const fetchMessages = async () => {
@@ -121,7 +118,6 @@ export default function Chat() {
             const messageData = doc.data();
             fetchedMessages.push({ ...messageData, id: doc.id });
 
-            // Update last message timestamp and unread status
             setLastMessages((prev) => ({
               ...prev,
               [selectedClientId]: messageData.createdAt?.toDate(),
@@ -139,7 +135,6 @@ export default function Chat() {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
           }
 
-          // Mark messages as read when fetching new messages if the chat area is already active
           markMessagesAsRead(selectedClientId);
         });
       } else {
@@ -161,25 +156,9 @@ export default function Chat() {
   const handleClientClick = async (clientId) => {
     setSelectedClientId(clientId);
     try {
-      const clientDocRef = doc(firestoredb, 'user-details', clientId);
-      const clientDocSnapshot = await getDoc(clientDocRef);
-
-      if (clientDocSnapshot.exists()) {
-        const marketMakerData = clientDocSnapshot.data();
-        const { displayName, nationalId } = marketMakerData;
-
-        const storageRef = ref(storage, `user_details/profile_pictures/${clientId}`);
-        const profilePictureUrl = await getDownloadURL(storageRef);
-
-        setClientData({ profilePictureUrl, displayName, nationalId });
-
-        // Mark messages as read
-        await markMessagesAsRead(clientId);
-      } else {
-        console.log('No such client document!');
-      }
+      await markMessagesAsRead(clientId);
     } catch (error) {
-      console.error('Error fetching client details:', error);
+      console.error('Error marking messages as read:', error);
     }
   };
 
@@ -307,17 +286,7 @@ export default function Chat() {
           overflowY: 'auto'
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Avatar src={clientData.profilePictureUrl} alt="Client" sx={{ width: 50, height: 50, mr: 2 }} />
-          <Box>
-            <Typography variant="subtitle1" sx={{ color: 'white' }}>
-              {clientData.displayName}
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'gray' }}>
-              National ID: {clientData.nationalId}
-            </Typography>
-          </Box>
-        </Box>
+        <ClientContext selectedClientId={selectedClientId} />
         <Divider sx={{ backgroundColor: 'white' }} />
         <Box
           ref={chatContainerRef}
@@ -412,5 +381,4 @@ export default function Chat() {
       </Box>
     </Container>
   );
-};
-
+}
