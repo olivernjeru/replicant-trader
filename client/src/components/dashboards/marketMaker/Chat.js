@@ -6,6 +6,7 @@ import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, u
 import { ref, getDownloadURL } from "firebase/storage";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect, useState, useRef } from "react";
+import { useSelectedClient } from './SelectedClientContext';
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -15,7 +16,6 @@ export default function Chat() {
   const [user] = useAuthState(auth);
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState(null);
   const [lastMessages, setLastMessages] = useState({});
   const [unreadMessages, setUnreadMessages] = useState({});
   const [clientData, setClientData] = useState({
@@ -23,6 +23,7 @@ export default function Chat() {
     displayName: "",
     nationalId: "",
   });
+  const { selectedClientId, setSelectedClientId } = useSelectedClient();
 
   const sendMessage = async (event) => {
     event.preventDefault();

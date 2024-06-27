@@ -4,13 +4,13 @@ import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import { ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
 import QuotesTable from './QuotesTable';
 import { doc, addDoc, collection } from 'firebase/firestore';
 import { firestoredb } from '../../../firebase';
 import { useAuth } from '../../authentication/authContext/AuthContext';
 import defaultTheme from '../../styleUtilities/DefaultTheme';
+import { useSelectedClient } from './SelectedClientContext';
 
 const initialState = {
     stockTicker: '',
@@ -22,7 +22,8 @@ const initialState = {
 
 export default function Quote() {
     const [formData, setFormData] = useState(initialState);
-    const { currentUser } = useAuth(); // Get the current authenticated user
+    const { currentUser } = useAuth();
+    const { selectedClientId } = useSelectedClient();
 
     const handleFormChange = (event) => {
         const { name, value } = event.target;
@@ -35,37 +36,44 @@ export default function Quote() {
 
         // Form validation
         if (!stockTicker || !bid || !offer || !volume || !validFor) {
-            setFormData({ ...formData, error: 'All fields are required.' });
-            return;
+          setFormData({ ...formData, error: 'All fields are required.' });
+          return;
         }
 
         // Clear previous error messages
         setFormData({ ...formData, error: '' });
 
         try {
-            // Get reference to the document with the current user's ID as the document ID
-            const userDocRef = doc(collection(firestoredb, 'quotes'), currentUser.uid);
+          // Check if a client is selected
+          if (!selectedClientId) {
+            setFormData({ ...formData, error: 'No client selected.' });
+            return;
+          }
 
-            // Add a new subcollection with a timestamp as the document ID
-            const newSubCollectionRef = collection(userDocRef, 'quotesData');
-            await addDoc(newSubCollectionRef, {
-                stockTicker,
-                bid,
-                offer,
-                volume,
-                validFor,
-                status: 'active', // Set default status to 'active'
-                createdAt: new Date(),
-            });
+          // Get reference to the document with the room ID
+          const roomId = [currentUser.uid, selectedClientId].sort().join("_");
+          const roomDocRef = doc(collection(firestoredb, 'quotes'), roomId);
 
-            console.log('Document written successfully');
-            // Reset form fields after successful submission
-            setFormData(initialState);
+          // Add a new subcollection with a timestamp as the document ID
+          const newSubCollectionRef = collection(roomDocRef, 'quotesData');
+          await addDoc(newSubCollectionRef, {
+            stockTicker,
+            bid,
+            offer,
+            volume,
+            validFor,
+            status: 'active', // Set default status to 'active'
+            createdAt: new Date(),
+          });
+
+          console.log('Document written successfully');
+          // Reset form fields after successful submission
+          setFormData(initialState);
         } catch (error) {
-            console.error('Error adding document: ', error);
-            setFormData({ ...formData, error: `An error occurred while saving data: ${error.message}` });
+          console.error('Error adding document: ', error);
+          setFormData({ ...formData, error: `An error occurred while saving data: ${error.message}` });
         }
-    };
+      };
 
     return (
         <ThemeProvider theme={defaultTheme}>

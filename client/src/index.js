@@ -1,8 +1,7 @@
-// Index.js
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import App from './App';
 import LogInPage from './pages/LogInPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import SignUpPage from './pages/SignUpPage';
@@ -13,6 +12,7 @@ import AccountProfilePage from './pages/AccountProfilePage';
 import PrivateRoutes from './components/authentication/privateRoutes/PrivateRoutes';
 import ReversePrivateRoutes from './components/authentication/reversePrivateRoutes/ReversePrivateRoutes';
 import { AuthProvider } from './components/authentication/authContext/AuthContext';
+import { SelectedClientProvider } from './components/dashboards/marketMaker/SelectedClientContext';
 import './index.css';
 
 const container = document.getElementById('root');
@@ -29,7 +29,14 @@ root.render(
           <Route path="sign-up" element={<SignUpPage />} />
         </Route>
         <Route element={<PrivateRoutes allowedRole="market-maker" />}>
-          <Route path='mm-dashboard' element={<MarketMakerDashboardPage />} />
+          <Route
+            path='mm-dashboard'
+            element={
+              <SelectedClientProvider>
+                <MarketMakerDashboardPage />
+              </SelectedClientProvider>
+            }
+          />
         </Route>
         <Route element={<PrivateRoutes allowedRole="client" />}>
           <Route path='client' element={<ClientDashboardPage />} />
