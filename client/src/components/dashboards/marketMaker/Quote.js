@@ -6,7 +6,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import QuotesTable from './QuotesTable';
-import { doc, addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection } from 'firebase/firestore';
 import { firestoredb } from '../../../firebase';
 import { useAuth } from '../../authentication/authContext/AuthContext';
 import defaultTheme from '../../styleUtilities/DefaultTheme';
@@ -36,108 +36,107 @@ export default function Quote() {
 
         // Form validation
         if (!stockTicker || !bid || !offer || !volume || !validFor) {
-          setFormData({ ...formData, error: 'All fields are required.' });
-          return;
+            setFormData({ ...formData, error: 'All fields are required.' });
+            return;
         }
 
         // Clear previous error messages
         setFormData({ ...formData, error: '' });
 
         try {
-          // Check if a client is selected
-          if (!selectedClientId) {
-            setFormData({ ...formData, error: 'No client selected.' });
-            return;
-          }
+            // Check if a client is selected
+            if (!selectedClientId) {
+                setFormData({ ...formData, error: 'No client selected.' });
+                return;
+            }
 
-          // Get reference to the document with the room ID
-          const roomId = [currentUser.uid, selectedClientId].sort().join("_");
-          const roomDocRef = doc(collection(firestoredb, 'quotes'), roomId);
+            // Reference to the quotes collection under the selected client
+            const quotesCollectionRef = collection(firestoredb, 'quotes', selectedClientId, 'data');
 
-          // Add a new subcollection with a timestamp as the document ID
-          const newSubCollectionRef = collection(roomDocRef, 'quotesData');
-          await addDoc(newSubCollectionRef, {
-            stockTicker,
-            bid,
-            offer,
-            volume,
-            validFor,
-            status: 'active', // Set default status to 'active'
-            createdAt: new Date(),
-          });
+            // Add a new document in the quotes collection
+            await addDoc(quotesCollectionRef, {
+                stockTicker,
+                bid,
+                offer,
+                volume,
+                validFor,
+                status: 'active', // Set default status to 'active'
+                createdAt: new Date(),
+                createdBy: currentUser.displayName, // Store current user's display name
+            });
 
-          console.log('Document written successfully');
-          // Reset form fields after successful submission
-          setFormData(initialState);
+            console.log('Document written successfully');
+            // Reset form fields after successful submission
+            setFormData(initialState);
         } catch (error) {
-          console.error('Error adding document: ', error);
-          setFormData({ ...formData, error: `An error occurred while saving data: ${error.message}` });
+            console.error('Error adding document: ', error);
+            setFormData({ ...formData, error: `An error occurred while saving data: ${error.message}` });
         }
-      };
+    };
 
     return (
         <ThemeProvider theme={defaultTheme}>
-                <CssBaseline />
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        // alignItems: 'center',
-                    }}
-                >
-                    <form onSubmit={sendQuote} noValidate >
-                        <Box>
-                            <TextField
-                                margin="normal"
-                                required
-                                id="stock-ticker-input"
-                                label="Stock Ticker"
-                                name="stockTicker"
-                                autoComplete="off"
-                                sx={{ margin: 1 }}
-                                value={formData.stockTicker}
-                                onChange={handleFormChange}
-                            />
-                            <TextField
-                                margin="normal"
-                                required
-                                id="bid"
-                                label="Bid"
-                                name="bid"
-                                type="number"
-                                autoComplete="off"
-                                sx={{ margin: 1 }}
-                                value={formData.bid}
-                                onChange={handleFormChange}
-                            />
-                        </Box>
-                        <Box sx={{ display: 'flex' }}>
-                            <TextField
-                                margin="normal"
-                                required
-                                id="offer"
-                                label="Offer"
-                                name="offer"
-                                type="number"
-                                autoComplete="off"
-                                sx={{ margin: 1 }}
-                                value={formData.offer}
-                                onChange={handleFormChange}
-                            />
-                            <TextField
-                                margin="normal"
-                                required
-                                id="volume"
-                                label="Volume"
-                                name="volume"
-                                type="number"
-                                autoComplete="off"
-                                sx={{ margin: 1 }}
-                                value={formData.volume}
-                                onChange={handleFormChange}
-                            />
-                        </Box>
-                        <Box>
+            <CssBaseline />
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    // alignItems: 'center',
+                }}
+            >
+                <form onSubmit={sendQuote} noValidate >
+                    <Box>
+                        <TextField
+                            margin="normal"
+                            required
+                            id="stock-ticker-input"
+                            label="Stock Ticker"
+                            name="stockTicker"
+                            autoComplete="off"
+                            sx={{ margin: 1 }}
+                            value={formData.stockTicker}
+                            onChange={handleFormChange}
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            id="bid"
+                            label="Bid"
+                            name="bid"
+                            type="number"
+                            autoComplete="off"
+                            sx={{ margin: 1 }}
+                            value={formData.bid}
+                            onChange={handleFormChange}
+                        />
+                    </Box>
+                    <Box sx={{ display: 'flex' }}>
+                        <TextField
+                            margin="normal"
+                            required
+                            id="offer"
+                            label="Offer"
+                            name="offer"
+                            type="number"
+                            autoComplete="off"
+                            sx={{ margin: 1 }}
+                            value={formData.offer}
+                            onChange={handleFormChange}
+                        />
+                        <TextField
+                            margin="normal"
+                            required
+                            id="volume"
+                            label="Volume"
+                            name="volume"
+                            type="number"
+                            autoComplete="off"
+                            sx={{ margin: 1 }}
+                            value={formData.volume}
+                            onChange={handleFormChange}
+                        />
+                    </Box>
+                    <Box>
                         <TextField
                             margin="normal"
                             required
@@ -149,9 +148,9 @@ export default function Quote() {
                             value={formData.validFor}
                             onChange={handleFormChange}
                         />
-                        </Box>
-                        {formData.error && <Typography color="error" variant="body2">{formData.error}</Typography>}
-                        <Box sx={{width: '55%'}}>
+                    </Box>
+                    {formData.error && <Typography color="error" variant="body2">{formData.error}</Typography>}
+                    <Box sx={{ width: '55%' }}>
                         <Button
                             type="submit"
                             fullWidth
@@ -160,10 +159,10 @@ export default function Quote() {
                         >
                             SEND QUOTE
                         </Button>
-                        </Box>
-                    </form>
-                    <QuotesTable />
-                </Box>
+                    </Box>
+                </form>
+                <QuotesTable />
+            </Box>
         </ThemeProvider>
     );
 }

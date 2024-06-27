@@ -27,6 +27,16 @@ export const AuthProvider = ({ children }) => {
         const pictureUrl = await getDownloadURL(pictureRef);
         userData = { ...userData, profilePictureUrl: pictureUrl };
         setUserData(userData);
+
+        // Update currentUser object with displayName fetched from Firestore
+        setCurrentUser({
+          ...user,
+          displayName: userData.displayName,
+          kraPin: userData.kraPin,
+          nationalId: userData.nationalId,
+          tradingNo: userData.tradingNo,
+          username: userData.username,
+        });
       }
     } catch (error) {
       console.error('Error fetching user details:', error);
