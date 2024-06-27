@@ -1,14 +1,11 @@
 import * as React from "react";
-import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, Badge } from "@mui/material";
-import Divider from "@mui/material/Divider";
-import Container from "@mui/material/Container";
-import SearchIcon from '@mui/icons-material/Search';
-import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import { auth, firestoredb } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, getDocs } from "firebase/firestore";
+import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, Badge, Divider, Container, List, ListItem, ListItemButton, ListItemText, Avatar } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import { auth, firestoredb, storage } from "../../../firebase";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, getDocs, getDoc } from "firebase/firestore";
+import { ref, getDownloadURL } from "firebase/storage";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect, useState, useRef } from "react";
-import ClientContext from "./ClientContext";
 
 export default function Chat() {
   const [messages, setMessages] = useState([]);
@@ -21,6 +18,11 @@ export default function Chat() {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [lastMessages, setLastMessages] = useState({});
   const [unreadMessages, setUnreadMessages] = useState({});
+  const [clientData, setClientData] = useState({
+    profilePictureUrl: "",
+    displayName: "",
+    nationalId: "",
+  });
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -33,8 +35,8 @@ export default function Chat() {
     const roomId = [uid, selectedClientId].sort().join("_");
 
     try {
-      const roomDocRef = doc(collection(firestoredb, 'rooms'), roomId);
-      const messagesSubCollectionRef = collection(roomDocRef, 'messages');
+      const roomDocRef = doc(collection(firestoredb, "rooms"), roomId);
+      const messagesSubCollectionRef = collection(roomDocRef, "messages");
 
       await addDoc(messagesSubCollectionRef, {
         text: message,
@@ -58,12 +60,15 @@ export default function Chat() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const clientsQuery = query(collection(firestoredb, 'user-details'), orderBy('displayName'));
+        const clientsQuery = query(
+          collection(firestoredb, "user-details"),
+          orderBy("displayName")
+        );
         const unsubscribe = onSnapshot(clientsQuery, (querySnapshot) => {
           const clientsData = [];
           querySnapshot.forEach((doc) => {
             const clientData = doc.data();
-            if (clientData.tradingNo.startsWith('C')) {
+            if (clientData.tradingNo.startsWith("C")) {
               clientsData.push({ id: doc.id, displayName: clientData.displayName });
             }
           });
@@ -71,7 +76,7 @@ export default function Chat() {
         });
         return unsubscribe;
       } catch (error) {
-        console.error('Error fetching clients:', error);
+        console.error("Error fetching clients:", error);
       }
     };
     fetchClients();
@@ -83,16 +88,16 @@ export default function Chat() {
 
   const markMessagesAsRead = async (clientId) => {
     const roomId = [auth.currentUser.uid, clientId].sort().join("_");
-    const roomDocRef = doc(firestoredb, 'rooms', roomId);
+    const roomDocRef = doc(firestoredb, "rooms", roomId);
     const messagesQuery = query(
-      collection(roomDocRef, 'messages'),
+      collection(roomDocRef, "messages"),
       orderBy("createdAt", "asc")
     );
 
     const querySnapshot = await getDocs(messagesQuery);
     querySnapshot.forEach(async (messageDoc) => {
       if (messageDoc.data().uid !== auth.currentUser.uid && !messageDoc.data().read) {
-        await updateDoc(doc(roomDocRef, 'messages', messageDoc.id), { read: true });
+        await updateDoc(doc(roomDocRef, "messages", messageDoc.id), { read: true });
       }
     });
 
@@ -107,9 +112,9 @@ export default function Chat() {
     const fetchMessages = async () => {
       if (selectedClientId) {
         const roomId = [auth.currentUser.uid, selectedClientId].sort().join("_");
-        const roomDocRef = doc(firestoredb, 'rooms', roomId);
+        const roomDocRef = doc(firestoredb, "rooms", roomId);
         const messagesQuery = query(
-          collection(roomDocRef, 'messages'),
+          collection(roomDocRef, "messages"),
           orderBy("createdAt", "asc")
         );
         unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
@@ -158,7 +163,7 @@ export default function Chat() {
     try {
       await markMessagesAsRead(clientId);
     } catch (error) {
-      console.error('Error marking messages as read:', error);
+      console.error("Error marking messages as read:", error);
     }
   };
 
@@ -167,9 +172,9 @@ export default function Chat() {
 
     const listenForMessages = (clientId) => {
       const roomId = [auth.currentUser.uid, clientId].sort().join("_");
-      const roomDocRef = doc(firestoredb, 'rooms', roomId);
+      const roomDocRef = doc(firestoredb, "rooms", roomId);
       const messagesQuery = query(
-        collection(roomDocRef, 'messages'),
+        collection(roomDocRef, "messages"),
         orderBy("createdAt", "asc")
       );
 
@@ -205,17 +210,54 @@ export default function Chat() {
     });
 
     return () => {
-      unsubscribeList.forEach(unsubscribe => unsubscribe());
+      unsubscribeList.forEach((unsubscribe) => unsubscribe());
     };
   }, [clients]);
+
+  useEffect(() => {
+    const fetchClientData = async () => {
+      if (selectedClientId) {
+        try {
+          const clientDocRef = doc(firestoredb, "user-details", selectedClientId);
+          const clientDocSnapshot = await getDoc(clientDocRef);
+
+          if (clientDocSnapshot.exists()) {
+            const clientDetails = clientDocSnapshot.data();
+            const { displayName, nationalId } = clientDetails;
+
+            const storageRef = ref(storage, `user_details/profile_pictures/${selectedClientId}`);
+            const profilePictureUrl = await getDownloadURL(storageRef);
+
+            setClientData({ profilePictureUrl, displayName, nationalId });
+          } else {
+            console.log("No such client document!");
+          }
+        } catch (error) {
+          console.error("Error fetching client details:", error);
+        }
+      }
+    };
+
+    fetchClientData();
+  }, [selectedClientId]);
 
   const filteredClients = clients.filter((client) =>
     client.displayName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240' }}>
-      <Box sx={{ ml: -3, padding: 1, maxHeight: '43vh', overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#D9D9D9', borderRadius: '4px' }, '&::-webkit-scrollbar-track': { backgroundColor: '#112240' } }}>
+    <Container sx={{ display: "flex", justifyContent: "space-between", backgroundColor: "#112240" }}>
+      <Box
+        sx={{
+          ml: -3,
+          padding: 1,
+          maxHeight: "43vh",
+          overflowY: "auto",
+          "&::-webkit-scrollbar": { width: "8px" },
+          "&::-webkit-scrollbar-thumb": { backgroundColor: "#D9D9D9", borderRadius: "4px" },
+          "&::-webkit-scrollbar-track": { backgroundColor: "#112240" },
+        }}
+      >
         <TextField
           label="Search"
           variant="outlined"
@@ -233,42 +275,38 @@ export default function Chat() {
               </InputAdornment>
             ),
             sx: {
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: 'white',
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "white",
               },
-              '& input': {
-                color: 'white',
-              }
-            }
+              "& input": {
+                color: "white",
+              },
+            },
           }}
           InputLabelProps={{
             style: {
-              color: 'white',
-            }
+              color: "white",
+            },
           }}
         />
-        <Divider sx={{ backgroundColor: 'white' }} />
+        <Divider sx={{ backgroundColor: "white" }} />
         <List>
           {filteredClients.map((client) => (
             <ListItem key={client.id} disablePadding>
               <ListItemButton onClick={() => handleClientClick(client.id)}>
                 <ListItemText
                   primary={
-                    <Typography variant="subtitle1" sx={{ color: 'white' }}>
+                    <Typography variant="subtitle1" sx={{ color: "white" }}>
                       {client.displayName}
                     </Typography>
                   }
                   secondary={
-                    <Typography variant="body2" sx={{ color: 'gray' }}>
+                    <Typography variant="body2" sx={{ color: "gray" }}>
                       {lastMessages[client.id] ? lastMessages[client.id].toLocaleString() : "Start a new chat"}
                     </Typography>
                   }
                 />
-                <Badge
-                  color="primary"
-                  variant="dot"
-                  invisible={!unreadMessages[client.id]}
-                />
+                <Badge color="primary" variant="dot" invisible={!unreadMessages[client.id]} />
               </ListItemButton>
             </ListItem>
           ))}
@@ -278,37 +316,51 @@ export default function Chat() {
       <Box
         sx={{
           height: "45vh",
-          width: '50%',
+          width: "50%",
           display: "flex",
           flexDirection: "column",
-          padding: '1%',
+          padding: "1%",
           mr: 1,
-          overflowY: 'auto'
+          overflowY: "auto",
         }}
       >
-        <ClientContext selectedClientId={selectedClientId} />
-        <Divider sx={{ backgroundColor: 'white' }} />
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+          <Avatar
+            src={clientData.profilePictureUrl}
+            alt="Client"
+            sx={{ width: 50, height: 50, mr: 2 }}
+          />
+          <Box>
+            <Typography variant="subtitle1" sx={{ color: "white" }}>
+              {clientData.displayName}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "gray" }}>
+              National ID: {clientData.nationalId}
+            </Typography>
+          </Box>
+        </Box>
+        <Divider sx={{ backgroundColor: "white" }} />
         <Box
           ref={chatContainerRef}
           sx={{
             flexGrow: 1,
-            overflowY: 'scroll',
+            overflowY: "scroll",
             paddingRight: 2,
-            maxHeight: 'calc(40vh - 110px)',
-            '&::-webkit-scrollbar': {
-              width: '8px',
+            maxHeight: "calc(40vh - 110px)",
+            "&::-webkit-scrollbar": {
+              width: "8px",
             },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: '#D9D9D9',
-              borderRadius: '4px',
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "#D9D9D9",
+              borderRadius: "4px",
             },
-            '&::-webkit-scrollbar-track': {
-              backgroundColor: '#112240',
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "#112240",
             },
           }}
         >
           {messages.map(({ id, text, email, createdAt, uid }) => (
-            <Box key={id} sx={{ textAlign: uid === auth.currentUser.uid ? 'right' : 'left' }}>
+            <Box key={id} sx={{ textAlign: uid === auth.currentUser.uid ? "right" : "left" }}>
               <Typography variant="body2" color="#999999">
                 {email} - {createdAt?.toDate().toLocaleString()}
               </Typography>
@@ -319,16 +371,16 @@ export default function Chat() {
         {error && (
           <Paper
             sx={{
-              position: 'absolute',
-              bottom: '10px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              backgroundColor: '#f44336',
-              color: '#fff',
-              padding: '10px',
-              borderRadius: '8px',
-              zIndex: '999',
-              transition: 'opacity 0.5s',
+              position: "absolute",
+              bottom: "10px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              backgroundColor: "#f44336",
+              color: "#fff",
+              padding: "10px",
+              borderRadius: "8px",
+              zIndex: "999",
+              transition: "opacity 0.5s",
               opacity: 1,
             }}
           >
@@ -355,23 +407,23 @@ export default function Chat() {
             value={message}
             onChange={handleMessageChange}
             sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: 'white',
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "white",
                 },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'white',
+                "&.Mui-focused fieldset": {
+                  borderColor: "white",
                 },
-                '&:hover fieldset': {
-                  borderColor: 'white',
+                "&:hover fieldset": {
+                  borderColor: "white",
                 },
-                '& input': {
-                  color: 'white',
-                }
-              }
+                "& input": {
+                  color: "white",
+                },
+              },
             }}
             InputLabelProps={{
-              style: { color: 'white' }
+              style: { color: "white" },
             }}
           />
           <Button type="submit" variant="contained" sx={{ ml: 1 }}>
