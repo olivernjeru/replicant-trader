@@ -36,7 +36,7 @@ export default function Chat() {
     const roomId = [uid, selectedClientId].sort().join("_");
 
     try {
-      const roomDocRef = doc(collection(firestoredb, "rooms"), roomId);
+      const roomDocRef = doc(collection(firestoredb, "chats"), roomId);
       const messagesSubCollectionRef = collection(roomDocRef, "messages");
 
       await addDoc(messagesSubCollectionRef, {
@@ -89,7 +89,7 @@ export default function Chat() {
 
   const markMessagesAsRead = async (clientId) => {
     const roomId = [auth.currentUser.uid, clientId].sort().join("_");
-    const roomDocRef = doc(firestoredb, "rooms", roomId);
+    const roomDocRef = doc(firestoredb, "chats", roomId);
     const messagesQuery = query(
       collection(roomDocRef, "messages"),
       orderBy("createdAt", "asc")
@@ -113,7 +113,7 @@ export default function Chat() {
     const fetchMessages = async () => {
       if (selectedClientId) {
         const roomId = [auth.currentUser.uid, selectedClientId].sort().join("_");
-        const roomDocRef = doc(firestoredb, "rooms", roomId);
+        const roomDocRef = doc(firestoredb, "chats", roomId);
         const messagesQuery = query(
           collection(roomDocRef, "messages"),
           orderBy("createdAt", "asc")
@@ -173,7 +173,7 @@ export default function Chat() {
 
     const listenForMessages = (clientId) => {
       const roomId = [auth.currentUser.uid, clientId].sort().join("_");
-      const roomDocRef = doc(firestoredb, "rooms", roomId);
+      const roomDocRef = doc(firestoredb, "chats", roomId);
       const messagesQuery = query(
         collection(roomDocRef, "messages"),
         orderBy("createdAt", "asc")
