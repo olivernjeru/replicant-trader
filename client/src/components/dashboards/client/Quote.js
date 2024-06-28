@@ -6,6 +6,7 @@ import styled from '@emotion/styled';
 import { firestoredb } from "../../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useAuth } from '../../authentication/authContext/AuthContext';
+import { Timestamp } from 'firebase/firestore';
 
 const StyledTableCell = styled(TableCell)({
     color: 'black',
@@ -42,6 +43,11 @@ export default function QuotesTable() {
     const [oldQuotes, setOldQuotes] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Function to convert Firestore Timestamp to JavaScript Date
+    const convertTimestampToDate = (timestamp) => {
+        return timestamp instanceof Timestamp ? timestamp.toDate() : timestamp;
+    };
+
     useEffect(() => {
         const quotesCollectionRef = collection(firestoredb, 'quotes', currentUser.uid, 'data');
 
@@ -49,15 +55,23 @@ export default function QuotesTable() {
             let liveQuotesData = [];
             let oldQuotesData = [];
 
-            for (const doc of quotesSnapshot.docs) {
-                const quoteData = { id: doc.id, ...doc.data() };
+            quotesSnapshot.forEach((doc) => {
+                const quoteData = {
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: convertTimestampToDate(doc.data().createdAt) // Convert Timestamp to Date
+                };
 
                 if (quoteData.status === 'active') {
                     liveQuotesData.push(quoteData);
                 } else {
                     oldQuotesData.push(quoteData);
                 }
-            }
+            });
+
+            // Sorting by createdAt after converting to Date
+            liveQuotesData.sort((a, b) => b.createdAt - a.createdAt);
+            oldQuotesData.sort((a, b) => b.createdAt - a.createdAt);
 
             setLiveQuotes(liveQuotesData);
             setOldQuotes(oldQuotesData);
@@ -86,7 +100,7 @@ export default function QuotesTable() {
         <Box
             sx={{
                 bgcolor: 'background.paper',
-                width: 560,
+                width: 570,
                 position: 'relative',
                 minHeight: 100,
             }}
@@ -98,7 +112,7 @@ export default function QuotesTable() {
                     indicatorColor="primary"
                     textColor="primary"
                     variant="fullWidth"
-                    aria-label="action tabs example"
+                    aria-label="quotes status tabs"
                 >
                     <Tab label="Live Quotes" />
                     <Tab label="Old Quotes" />
@@ -110,14 +124,14 @@ export default function QuotesTable() {
                 onChangeIndex={handleChangeIndex}
             >
                 <TabPanel value={value} index={0} dir={theme.direction}>
-                    <TableContainer component={Paper}>
+                    <TableContainer component={Paper} sx={{ maxHeight: 330, overflowY: 'auto' }}>
                         <Table sx={{ maxWidth: 500 }} size="small" aria-label="live-quotes-table">
                             <TableHead>
                                 <TableRow>
                                     <StyledTableCell align="left">SECURITY</StyledTableCell>
                                     <StyledTableCell align="left">VOLUME</StyledTableCell>
-                                    <StyledTableCell align="left">BID</StyledTableCell>
-                                    <StyledTableCell align="left">OFFER</StyledTableCell>
+                                    <StyledTableCell align="left">BUY</StyledTableCell>
+                                    <StyledTableCell align="left">SELL</StyledTableCell>
                                     <StyledTableCell align="left">VALID FOR</StyledTableCell>
                                     <StyledTableCell align="left">MARKET MAKER</StyledTableCell>
                                 </TableRow>
@@ -128,10 +142,10 @@ export default function QuotesTable() {
                                         <StyledTableCell align="left">{row.stockTicker}</StyledTableCell>
                                         <StyledTableCell align="left">{row.volume}</StyledTableCell>
                                         <StyledTableCell align="left">
-                                            <Button variant="contained" color="primary">Sell {row.bid}</Button>
+                                            <Button variant="contained" color="primary" size="small">{row.offer}</Button>
                                         </StyledTableCell>
                                         <StyledTableCell align="left">
-                                            <Button variant="contained" color="primary">Buy {row.offer}</Button>
+                                            <Button variant="contained" color="secondary" size="small">{row.bid}</Button>
                                         </StyledTableCell>
                                         <StyledTableCell align="left">{row.validFor}</StyledTableCell>
                                         <StyledTableCell align="left">{row.createdBy}</StyledTableCell>
@@ -142,14 +156,14 @@ export default function QuotesTable() {
                     </TableContainer>
                 </TabPanel>
                 <TabPanel value={value} index={1} dir={theme.direction}>
-                    <TableContainer component={Paper}>
+                    <TableContainer component={Paper} sx={{ maxHeight: 330, overflowY: 'auto' }}>
                         <Table sx={{ maxWidth: 500 }} size="small" aria-label="old-quotes-table">
                             <TableHead>
                                 <TableRow>
                                     <StyledTableCell align="left">SECURITY</StyledTableCell>
                                     <StyledTableCell align="left">VOLUME</StyledTableCell>
-                                    <StyledTableCell align="left">BID</StyledTableCell>
-                                    <StyledTableCell align="left">OFFER</StyledTableCell>
+                                    <StyledTableCell align="left">BUY</StyledTableCell>
+                                    <StyledTableCell align="left">SELL</StyledTableCell>
                                     <StyledTableCell align="left">VALID FOR</StyledTableCell>
                                     <StyledTableCell align="left">MARKET MAKER</StyledTableCell>
                                 </TableRow>
@@ -160,10 +174,10 @@ export default function QuotesTable() {
                                         <StyledTableCell align="left">{row.stockTicker}</StyledTableCell>
                                         <StyledTableCell align="left">{row.volume}</StyledTableCell>
                                         <StyledTableCell align="left">
-                                            <Button variant="contained" color="primary">Sell {row.bid}</Button>
+                                            <Button variant="contained" color="primary">{row.offer}</Button>
                                         </StyledTableCell>
                                         <StyledTableCell align="left">
-                                            <Button variant="contained" color="primary">Buy {row.offer}</Button>
+                                            <Button variant="contained" color="secondary">{row.bid}</Button>
                                         </StyledTableCell>
                                         <StyledTableCell align="left">{row.validFor}</StyledTableCell>
                                         <StyledTableCell align="left">{row.createdBy}</StyledTableCell>
