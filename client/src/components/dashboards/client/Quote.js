@@ -4,7 +4,7 @@ import SwipeableViews from 'react-swipeable-views';
 import { useTheme, AppBar, Tabs, Tab, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, CircularProgress } from '@mui/material';
 import styled from '@emotion/styled';
 import { firestoredb } from "../../../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { useAuth } from '../../authentication/authContext/AuthContext';
 import { Timestamp } from 'firebase/firestore';
 
@@ -48,10 +48,17 @@ export default function QuotesTable() {
         return timestamp instanceof Timestamp ? timestamp.toDate() : timestamp;
     };
 
+    // Function to calculate the remaining time for each quote
+    const calculateRemainingTime = (createdAt, validFor) => {
+        const now = new Date();
+        const expiryTime = new Date(createdAt.getTime() + validFor * 1000); // validFor is in seconds
+        return Math.max(0, Math.floor((expiryTime - now) / 1000));
+    };
+
     useEffect(() => {
         const quotesCollectionRef = collection(firestoredb, 'quotes', currentUser.uid, 'data');
 
-        const unsubscribe = onSnapshot(quotesCollectionRef, async (quotesSnapshot) => {
+        const unsubscribe = onSnapshot(quotesCollectionRef, (quotesSnapshot) => {
             let liveQuotesData = [];
             let oldQuotesData = [];
 
@@ -84,6 +91,30 @@ export default function QuotesTable() {
         return () => unsubscribe();
     }, [currentUser]);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setLiveQuotes((prevLiveQuotes) => {
+                return prevLiveQuotes.map((quote) => {
+                    const remainingTime = calculateRemainingTime(quote.createdAt, quote.validFor);
+
+                    if (remainingTime <= 0) {
+                        // Update the quote status in the database
+                        const quoteDocRef = doc(firestoredb, 'quotes', currentUser.uid, 'data', quote.id);
+                        updateDoc(quoteDocRef, { status: 'expired' });
+
+                        // Move the quote to oldQuotes
+                        setOldQuotes((prevOldQuotes) => [quote, ...prevOldQuotes]);
+                        return null;
+                    }
+
+                    return { ...quote, remainingTime };
+                }).filter(quote => quote !== null);
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [liveQuotes, currentUser]);
+
     const handleChange = (event, newValue) => {
         setValue(newValue);
     };
@@ -100,7 +131,7 @@ export default function QuotesTable() {
         <Box
             sx={{
                 bgcolor: 'background.paper',
-                width: 570,
+                width: 600,
                 position: 'relative',
                 minHeight: 100,
             }}
@@ -147,7 +178,7 @@ export default function QuotesTable() {
                                         <StyledTableCell align="left">
                                             <Button variant="contained" color="secondary" size="small">{row.bid}</Button>
                                         </StyledTableCell>
-                                        <StyledTableCell align="left">{row.validFor}</StyledTableCell>
+                                        <StyledTableCell align="left">{row.remainingTime}</StyledTableCell>
                                         <StyledTableCell align="left">{row.createdBy}</StyledTableCell>
                                     </TableRow>
                                 ))}
