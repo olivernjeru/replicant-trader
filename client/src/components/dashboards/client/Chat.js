@@ -367,21 +367,22 @@ export default function Chat() {
               <ListItemButton onClick={() => handleMarketMakerClick(marketMaker.id)}>
                 <ListItemText
                   primary={
-                    <Typography variant="subtitle1" sx={{ color: 'white' }}>
-                      {marketMaker.displayName}
-                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="subtitle1" sx={{ color: "white" }}>
+                        {marketMaker.displayName}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "gray" }}>
+                        {latestMessages[marketMaker.id]?.createdAt?.toDate().toLocaleDateString() || ""}
+                      </Typography>
+                    </Box>
                   }
                   secondary={
-                    <Typography variant="body2" sx={{ color: 'gray' }}>
-                      {lastMessages[marketMaker.id] ? lastMessages[marketMaker.id].toLocaleString() : "Start a new chat"}
+                    <Typography variant="body2" sx={{ color: "lightgray" }}>
+                      {latestMessages[marketMaker.id] ? truncateMessage(latestMessages[marketMaker.id].text) : "No messages"}
                     </Typography>
                   }
                 />
-                <Badge
-                  color="primary"
-                  variant="dot"
-                  invisible={!unreadMessages[marketMaker.id]}
-                />
+                <Badge color="primary" variant="dot" invisible={!unreadMessages[marketMaker.id]} />
               </ListItemButton>
             </ListItem>
           ))}
