@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
@@ -6,11 +6,12 @@ import { ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import QuotesTable from './QuotesTable';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, onSnapshot, getDocs, updateDoc } from 'firebase/firestore';
 import { firestoredb } from '../../../firebase';
 import { useAuth } from '../../authentication/authContext/AuthContext';
 import defaultTheme from '../../styleUtilities/DefaultTheme';
 import { useSelectedClient } from './SelectedClientContext';
+import { auth } from '../../../firebase';
 
 const initialState = {
     stockTicker: '',
@@ -18,6 +19,7 @@ const initialState = {
     offer: '',
     volume: '',
     validFor: '',
+    error: '',
 };
 
 export default function Quote() {
@@ -54,7 +56,7 @@ export default function Quote() {
             const quotesCollectionRef = collection(firestoredb, 'quotes', selectedClientId, 'data');
 
             // Add a new document in the quotes collection
-            await addDoc(quotesCollectionRef, {
+            const docRef = await addDoc(quotesCollectionRef, {
                 stockTicker,
                 bid,
                 offer,
@@ -62,10 +64,24 @@ export default function Quote() {
                 validFor,
                 status: 'active', // Set default status to 'active'
                 createdAt: new Date(),
-                createdBy: currentUser.displayName, // Store current user's display name
+                createdBy: currentUser.displayName,
             });
 
             console.log('Document written successfully');
+
+            // Send message to chat
+            const roomId = [auth.currentUser.uid, selectedClientId].sort().join("_");
+            const roomDocRef = doc(collection(firestoredb, "chats"), roomId);
+            const messagesSubCollectionRef = collection(roomDocRef, "messages");
+
+            await addDoc(messagesSubCollectionRef, {
+                text: `Quote sent: ${stockTicker}, Bid: ${bid}, Offer: ${offer}, Volume: ${volume}, Valid for: ${validFor}, Status: active`,
+                email: currentUser.email,
+                createdAt: serverTimestamp(),
+                uid: auth.currentUser.uid,
+                read: false,
+            });
+
             // Reset form fields after successful submission
             setFormData(initialState);
         } catch (error) {
@@ -74,17 +90,42 @@ export default function Quote() {
         }
     };
 
+    useEffect(() => {
+        if (selectedClientId) {
+            const quotesCollectionRef = collection(firestoredb, 'quotes', selectedClientId, 'data');
+
+            const unsubscribe = onSnapshot(quotesCollectionRef, (snapshot) => {
+                snapshot.docChanges().forEach(async (change) => {
+                    if (change.type === "modified") {
+                        const { stockTicker, status } = change.doc.data();
+                        const roomId = [auth.currentUser.uid, selectedClientId].sort().join("_");
+                        const roomDocRef = doc(collection(firestoredb, "chats"), roomId);
+                        const messagesSubCollectionRef = collection(roomDocRef, "messages");
+
+                        // Find the message corresponding to the quote
+                        const messagesSnapshot = await getDocs(messagesSubCollectionRef);
+                        messagesSnapshot.forEach((doc) => {
+                            if (doc.data().text.includes(stockTicker)) {
+                                // Update the status in the existing message
+                                updateDoc(doc.ref, {
+                                    text: doc.data().text.replace(/Status: \w+/, `Status: ${status}`),
+                                    updatedAt: serverTimestamp(),
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            return () => unsubscribe();
+        }
+    }, [selectedClientId]);
+
     return (
         <ThemeProvider theme={defaultTheme}>
             <CssBaseline />
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    // alignItems: 'center',
-                }}
-            >
-                <form onSubmit={sendQuote} noValidate >
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <form onSubmit={sendQuote} noValidate>
                     <Box>
                         <TextField
                             margin="normal"
