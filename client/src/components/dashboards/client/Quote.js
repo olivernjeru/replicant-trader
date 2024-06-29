@@ -155,7 +155,7 @@ export default function QuotesTable() {
                 onChangeIndex={handleChangeIndex}
             >
                 <TabPanel value={value} index={0} dir={theme.direction}>
-                    <TableContainer component={Paper} sx={{ maxHeight: 330, overflowY: 'auto' }}>
+                    <TableContainer component={Paper} sx={{ maxHeight: 330, overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#1976D2', borderRadius: '4px' }, '&::-webkit-scrollbar-track': { backgroundColor: '#D9D9D9' } }}>
                         <Table sx={{ maxWidth: 500 }} size="small" aria-label="live-quotes-table">
                             <TableHead>
                                 <TableRow>
@@ -187,7 +187,7 @@ export default function QuotesTable() {
                     </TableContainer>
                 </TabPanel>
                 <TabPanel value={value} index={1} dir={theme.direction}>
-                    <TableContainer component={Paper} sx={{ maxHeight: 330, overflowY: 'auto' }}>
+                    <TableContainer component={Paper} sx={{ maxHeight: 330, overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#1976D2', borderRadius: '4px' }, '&::-webkit-scrollbar-track': { backgroundColor: '#D9D9D9' } }}>
                         <Table sx={{ maxWidth: 500 }} size="small" aria-label="old-quotes-table">
                             <TableHead>
                                 <TableRow>
@@ -205,10 +205,10 @@ export default function QuotesTable() {
                                         <StyledTableCell align="left">{row.stockTicker}</StyledTableCell>
                                         <StyledTableCell align="left">{row.volume}</StyledTableCell>
                                         <StyledTableCell align="left">
-                                            <Button variant="contained" color="primary">{row.offer}</Button>
+                                            {row.offer}
                                         </StyledTableCell>
                                         <StyledTableCell align="left">
-                                            <Button variant="contained" color="secondary">{row.bid}</Button>
+                                            {row.bid}
                                         </StyledTableCell>
                                         <StyledTableCell align="left">{row.validFor}</StyledTableCell>
                                         <StyledTableCell align="left">{row.createdBy}</StyledTableCell>
