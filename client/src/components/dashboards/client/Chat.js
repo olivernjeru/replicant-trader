@@ -23,6 +23,10 @@ export default function Chat() {
   const [selectedMarketMakerId, setSelectedMarketMakerId] = useState(null);
   const [lastMessages, setLastMessages] = useState({});
   const [unreadMessages, setUnreadMessages] = useState({});
+  const [latestMessages, setLatestMessages] = useState({}); // New state for latest messages
+
+  // Memoize function to cache fetched client data
+  const marketMakerCache = useRef({});
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -116,15 +120,17 @@ export default function Chat() {
         );
         unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
           const fetchedMessages = [];
+          let latestMessage = null; // Track the latest message
+
           QuerySnapshot.forEach((doc) => {
             const messageData = doc.data();
             fetchedMessages.push({ ...messageData, id: doc.id });
 
-            // Update last message timestamp and unread status
-            setLastMessages((prev) => ({
-              ...prev,
-              [selectedMarketMakerId]: messageData.createdAt?.toDate(),
-            }));
+            // Update latest message only if it's newer
+            if (!latestMessage || messageData.createdAt.toDate() > latestMessage.createdAt.toDate()) {
+              latestMessage = messageData;
+            }
+
             if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
               setUnreadMessages((prev) => ({
                 ...prev,
@@ -132,6 +138,15 @@ export default function Chat() {
               }));
             }
           });
+
+          // Update latest message state
+          if (latestMessage) {
+            setLatestMessages((prev) => ({
+              ...prev,
+              [selectedMarketMakerId]: latestMessage,
+            }));
+          }
+
           setMessages(fetchedMessages);
 
           if (chatContainerRef.current) {
@@ -157,30 +172,112 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const truncateMessage = (message) => {
+    const maxLength = 30; // Maximum length of the message to display without truncation
+
+    if (message.length > maxLength) {
+      return `${message.slice(0, maxLength)}...`;
+    } else {
+      return message;
+    }
+  };
+
   const handleMarketMakerClick = async (marketMakerId) => {
     setSelectedMarketMakerId(marketMakerId);
     try {
-      const marketMakerDocRef = doc(firestoredb, 'user-details', marketMakerId);
-      const marketMakerDocSnapshot = await getDoc(marketMakerDocRef);
-
-      if (marketMakerDocSnapshot.exists()) {
-        const marketMakerData = marketMakerDocSnapshot.data();
-        const { displayName, nationalId } = marketMakerData;
-
-        const storageRef = ref(storage, `user_details/profile_pictures/${marketMakerId}`);
-        const profilePictureUrl = await getDownloadURL(storageRef);
-
-        setMarketMakerData({ profilePictureUrl, displayName, nationalId });
-
-        // Mark messages as read
-        await markMessagesAsRead(marketMakerId);
-      } else {
-        console.log('No such market maker document!');
-      }
+      await markMessagesAsRead(marketMakerId);
     } catch (error) {
-      console.error('Error fetching market maker details:', error);
+      console.error("Error marking messages as read:", error);
     }
   };
+
+  useEffect(() => {
+    const unsubscribeList = [];
+
+    marketMakers.forEach((marketMaker) => {
+      const roomId = [auth.currentUser.uid, marketMaker.id].sort().join("_");
+      const roomDocRef = doc(firestoredb, "chats", roomId);
+      const messagesQuery = query(
+        collection(roomDocRef, "messages"),
+        orderBy("createdAt", "asc")
+      );
+
+      const unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
+        let latestMessage = null;
+
+        querySnapshot.forEach((doc) => {
+          const messageData = doc.data();
+
+          if (!latestMessage || messageData.createdAt.toDate() > latestMessage.createdAt.toDate()) {
+            latestMessage = messageData;
+          }
+        });
+
+        // Update latest message state
+        if (latestMessage) {
+          setLatestMessages((prev) => ({
+            ...prev,
+            [setSelectedMarketMakerId.id]: latestMessage,
+          }));
+        }
+      });
+
+      unsubscribeList.push(unsubscribe);
+    });
+
+    return () => {
+      unsubscribeList.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [marketMakers]);
+
+  useEffect(() => {
+    setMarketMakers((prevMarketMakers) =>
+      [...prevMarketMakers].sort((a, b) => {
+        const timeA = latestMessages[a.id] ? latestMessages[a.id].createdAt.toDate().getTime() : 0;
+        const timeB = latestMessages[b.id] ? latestMessages[b.id].createdAt.toDate().getTime() : 0;
+        return timeB - timeA;
+      })
+    );
+  }, [latestMessages]);
+
+  useEffect(() => {
+    const fetchMarketMakerData = async () => {
+      if (selectedMarketMakerId) {
+        try {
+          if (marketMakerCache.current[selectedMarketMakerId]) {
+            setMarketMakerData(marketMakerCache.current[selectedMarketMakerId]);
+          } else {
+            const marketMakerDocRef = doc(firestoredb, "user-details", selectedMarketMakerId);
+            const marketMakerDocSnapshot = await getDoc(marketMakerDocRef);
+
+            if (marketMakerDocSnapshot.exists()) {
+              const marketMakerDetails = marketMakerDocSnapshot.data();
+              const { displayName, nationalId } = marketMakerDetails;
+
+              const storageRef = ref(storage, `user_details/profile_pictures/${selectedMarketMakerId}`);
+              const profilePictureUrl = await getDownloadURL(storageRef);
+
+              const marketMakerData = { profilePictureUrl, displayName, nationalId };
+              setMarketMakerData(marketMakerData);
+
+              // Cache the client data
+              marketMakerCache.current[selectedMarketMakerId] = marketMakerData;
+            } else {
+              console.log("No such market maker document!");
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching market maker details:", error);
+        }
+      }
+    };
+
+    fetchMarketMakerData();
+  }, [selectedMarketMakerId]);
+
+  const filteredMarketMakers = marketMakers.filter((marketMaker) =>
+    marketMaker.displayName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     const unsubscribeList = [];
@@ -228,10 +325,6 @@ export default function Chat() {
       unsubscribeList.forEach(unsubscribe => unsubscribe());
     };
   }, [marketMakers]);
-
-  const filteredMarketMakers = marketMakers.filter((marketMaker) =>
-    marketMaker.displayName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <Container sx={{ display: 'flex', justifyContent: "space-between", backgroundColor: '#112240' }}>

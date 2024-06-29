@@ -1,11 +1,11 @@
 import * as React from "react";
+import { useState, useEffect, useRef } from "react";
 import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, Badge, Divider, Container, List, ListItem, ListItemButton, ListItemText, Avatar } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, firestoredb, storage } from "../../../firebase";
 import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, getDocs, getDoc } from "firebase/firestore";
 import { ref, getDownloadURL } from "firebase/storage";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { useEffect, useState, useRef } from "react";
 import { useSelectedClient } from './SelectedClientContext';
 
 export default function Chat() {
@@ -24,6 +24,10 @@ export default function Chat() {
     nationalId: "",
   });
   const { selectedClientId, setSelectedClientId } = useSelectedClient();
+  const [latestMessages, setLatestMessages] = useState({}); // New state for latest messages
+
+  // Memoize function to cache fetched client data
+  const clientCache = useRef({});
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -118,16 +122,19 @@ export default function Chat() {
           collection(roomDocRef, "messages"),
           orderBy("createdAt", "asc")
         );
-        unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
+        unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
           const fetchedMessages = [];
-          QuerySnapshot.forEach((doc) => {
+          let latestMessage = null; // Track the latest message
+
+          querySnapshot.forEach((doc) => {
             const messageData = doc.data();
             fetchedMessages.push({ ...messageData, id: doc.id });
 
-            setLastMessages((prev) => ({
-              ...prev,
-              [selectedClientId]: messageData.createdAt?.toDate(),
-            }));
+            // Update latest message only if it's newer
+            if (!latestMessage || messageData.createdAt.toDate() > latestMessage.createdAt.toDate()) {
+              latestMessage = messageData;
+            }
+
             if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
               setUnreadMessages((prev) => ({
                 ...prev,
@@ -135,6 +142,15 @@ export default function Chat() {
               }));
             }
           });
+
+          // Update latest message state
+          if (latestMessage) {
+            setLatestMessages((prev) => ({
+              ...prev,
+              [selectedClientId]: latestMessage,
+            }));
+          }
+
           setMessages(fetchedMessages);
 
           if (chatContainerRef.current) {
@@ -159,6 +175,16 @@ export default function Chat() {
     }
   }, [messages]);
 
+  const truncateMessage = (message) => {
+    const maxLength = 30; // Maximum length of the message to display without truncation
+
+    if (message.length > maxLength) {
+      return `${message.slice(0, maxLength)}...`;
+    } else {
+      return message;
+    }
+  };
+
   const handleClientClick = async (clientId) => {
     setSelectedClientId(clientId);
     try {
@@ -171,11 +197,99 @@ export default function Chat() {
   useEffect(() => {
     const unsubscribeList = [];
 
-    const listenForMessages = (clientId) => {
-      const roomId = [auth.currentUser.uid, clientId].sort().join("_");
+    clients.forEach((client) => {
+      const roomId = [auth.currentUser.uid, client.id].sort().join("_");
       const roomDocRef = doc(firestoredb, "chats", roomId);
       const messagesQuery = query(
         collection(roomDocRef, "messages"),
+        orderBy("createdAt", "asc")
+      );
+
+      const unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
+        let latestMessage = null;
+
+        querySnapshot.forEach((doc) => {
+          const messageData = doc.data();
+
+          if (!latestMessage || messageData.createdAt.toDate() > latestMessage.createdAt.toDate()) {
+            latestMessage = messageData;
+          }
+        });
+
+        // Update latest message state
+        if (latestMessage) {
+          setLatestMessages((prev) => ({
+            ...prev,
+            [client.id]: latestMessage,
+          }));
+        }
+      });
+
+      unsubscribeList.push(unsubscribe);
+    });
+
+    return () => {
+      unsubscribeList.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [clients]);
+
+  useEffect(() => {
+    setClients((prevClients) =>
+      [...prevClients].sort((a, b) => {
+        const timeA = latestMessages[a.id] ? latestMessages[a.id].createdAt.toDate().getTime() : 0;
+        const timeB = latestMessages[b.id] ? latestMessages[b.id].createdAt.toDate().getTime() : 0;
+        return timeB - timeA;
+      })
+    );
+  }, [latestMessages]);
+
+  useEffect(() => {
+    const fetchClientData = async () => {
+      if (selectedClientId) {
+        try {
+          if (clientCache.current[selectedClientId]) {
+            setClientData(clientCache.current[selectedClientId]);
+          } else {
+            const clientDocRef = doc(firestoredb, "user-details", selectedClientId);
+            const clientDocSnapshot = await getDoc(clientDocRef);
+
+            if (clientDocSnapshot.exists()) {
+              const clientDetails = clientDocSnapshot.data();
+              const { displayName, nationalId } = clientDetails;
+
+              const storageRef = ref(storage, `user_details/profile_pictures/${selectedClientId}`);
+              const profilePictureUrl = await getDownloadURL(storageRef);
+
+              const clientData = { profilePictureUrl, displayName, nationalId };
+              setClientData(clientData);
+
+              // Cache the client data
+              clientCache.current[selectedClientId] = clientData;
+            } else {
+              console.log("No such client document!");
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching client details:", error);
+        }
+      }
+    };
+
+    fetchClientData();
+  }, [selectedClientId]);
+
+  const filteredClients = clients.filter((client) =>
+    client.displayName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    const unsubscribeList = [];
+
+    const listenForMessages = (clientId) => {
+      const roomId = [auth.currentUser.uid, clientId].sort().join("_");
+      const roomDocRef = doc(firestoredb, 'chats', roomId);
+      const messagesQuery = query(
+        collection(roomDocRef, 'messages'),
         orderBy("createdAt", "asc")
       );
 
@@ -211,40 +325,9 @@ export default function Chat() {
     });
 
     return () => {
-      unsubscribeList.forEach((unsubscribe) => unsubscribe());
+      unsubscribeList.forEach(unsubscribe => unsubscribe());
     };
   }, [clients]);
-
-  useEffect(() => {
-    const fetchClientData = async () => {
-      if (selectedClientId) {
-        try {
-          const clientDocRef = doc(firestoredb, "user-details", selectedClientId);
-          const clientDocSnapshot = await getDoc(clientDocRef);
-
-          if (clientDocSnapshot.exists()) {
-            const clientDetails = clientDocSnapshot.data();
-            const { displayName, nationalId } = clientDetails;
-
-            const storageRef = ref(storage, `user_details/profile_pictures/${selectedClientId}`);
-            const profilePictureUrl = await getDownloadURL(storageRef);
-
-            setClientData({ profilePictureUrl, displayName, nationalId });
-          } else {
-            console.log("No such client document!");
-          }
-        } catch (error) {
-          console.error("Error fetching client details:", error);
-        }
-      }
-    };
-
-    fetchClientData();
-  }, [selectedClientId]);
-
-  const filteredClients = clients.filter((client) =>
-    client.displayName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <Container sx={{ display: "flex", justifyContent: "space-between", backgroundColor: "#112240" }}>
@@ -297,13 +380,18 @@ export default function Chat() {
               <ListItemButton onClick={() => handleClientClick(client.id)}>
                 <ListItemText
                   primary={
-                    <Typography variant="subtitle1" sx={{ color: "white" }}>
-                      {client.displayName}
-                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="subtitle1" sx={{ color: "white" }}>
+                        {client.displayName}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "gray" }}>
+                        {latestMessages[client.id]?.createdAt?.toDate().toLocaleDateString() || ""}
+                      </Typography>
+                    </Box>
                   }
                   secondary={
-                    <Typography variant="body2" sx={{ color: "gray" }}>
-                      {lastMessages[client.id] ? lastMessages[client.id].toLocaleString() : "Start a new chat"}
+                    <Typography variant="body2" sx={{ color: "lightgray" }}>
+                      {latestMessages[client.id] ? truncateMessage(latestMessages[client.id].text) : "No messages"}
                     </Typography>
                   }
                 />
