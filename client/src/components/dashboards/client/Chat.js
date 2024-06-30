@@ -6,7 +6,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { Avatar } from "@mui/material";
 import { List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { auth, firestoredb, storage } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, getDoc, updateDoc, getDocs } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, getDoc, updateDoc, getDocs, limit } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect, useState, useRef } from "react";
 import { ref, getDownloadURL } from 'firebase/storage';
@@ -18,11 +18,15 @@ export default function Chat() {
   const [error, setError] = useState(null);
   const [user] = useAuthState(auth);
   const [marketMakers, setMarketMakers] = useState([]);
-  const [marketMakerData, setMarketMakerData] = useState({ profilePictureUrl: "", displayName: "", nationalId: "" });
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMarketMakerId, setSelectedMarketMakerId] = useState(null);
   const [lastMessages, setLastMessages] = useState({});
   const [unreadMessages, setUnreadMessages] = useState({});
+  const [marketMakerData, setMarketMakerData] = useState({
+    profilePictureUrl: "",
+    displayName: "",
+    nationalId: "",
+  });
+  const [selectedMarketMakerId, setSelectedMarketMakerId] = useState(null);
   const [latestMessages, setLatestMessages] = useState({}); // New state for latest messages
 
   // Memoize function to cache fetched client data
@@ -113,47 +117,19 @@ export default function Chat() {
     const fetchMessages = async () => {
       if (selectedMarketMakerId) {
         const roomId = [auth.currentUser.uid, selectedMarketMakerId].sort().join("_");
-        const roomDocRef = doc(firestoredb, 'chats', roomId);
+        const roomDocRef = doc(firestoredb, "chats", roomId);
         const messagesQuery = query(
-          collection(roomDocRef, 'messages'),
-          orderBy("createdAt", "asc")
+          collection(roomDocRef, "messages"),
+          orderBy("createdAt", "asc"),
+          limit(20)
         );
-        unsubscribe = onSnapshot(messagesQuery, (QuerySnapshot) => {
-          const fetchedMessages = [];
-          let latestMessage = null; // Track the latest message
 
-          QuerySnapshot.forEach((doc) => {
-            const messageData = doc.data();
-            fetchedMessages.push({ ...messageData, id: doc.id });
-
-            // Update latest message only if it's newer
-            if (!latestMessage || messageData.createdAt.toDate() > latestMessage.createdAt.toDate()) {
-              latestMessage = messageData;
-            }
-
-            if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
-              setUnreadMessages((prev) => ({
-                ...prev,
-                [selectedMarketMakerId]: true,
-              }));
-            }
-          });
-
-          // Update latest message state
-          if (latestMessage) {
-            setLatestMessages((prev) => ({
-              ...prev,
-              [selectedMarketMakerId]: latestMessage,
-            }));
-          }
-
-          setMessages(fetchedMessages);
-
-          if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          }
-
-          // Mark messages as read when fetching new messages if the chat area is already active
+        unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
+          const fetchedMessages = querySnapshot.docs.map((doc) => ({
+            ...doc.data(),
+            id: doc.id,
+          }));
+          setMessages((prevMessages) => [...prevMessages, ...fetchedMessages]);
           markMessagesAsRead(selectedMarketMakerId);
         });
       } else {
@@ -217,7 +193,7 @@ export default function Chat() {
         if (latestMessage) {
           setLatestMessages((prev) => ({
             ...prev,
-            [setSelectedMarketMakerId.id]: latestMessage,
+            [marketMaker.id]: latestMessage,
           }));
         }
       });

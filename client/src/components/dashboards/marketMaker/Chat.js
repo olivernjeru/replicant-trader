@@ -4,7 +4,7 @@ import { Box, TextField, Button, Typography, Paper, InputAdornment, IconButton, 
 import SearchIcon from "@mui/icons-material/Search";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, firestoredb, storage } from "../../../firebase";
-import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, getDocs, getDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, getDocs, getDoc, limit } from "firebase/firestore";
 import { ref, getDownloadURL } from "firebase/storage";
 import { useSelectedClient } from './SelectedClientContext';
 
@@ -120,43 +120,16 @@ export default function Chat() {
         const roomDocRef = doc(firestoredb, "chats", roomId);
         const messagesQuery = query(
           collection(roomDocRef, "messages"),
-          orderBy("createdAt", "asc")
+          orderBy("createdAt", "asc"),
+          limit(20)
         );
+
         unsubscribe = onSnapshot(messagesQuery, (querySnapshot) => {
-          const fetchedMessages = [];
-          let latestMessage = null; // Track the latest message
-
-          querySnapshot.forEach((doc) => {
-            const messageData = doc.data();
-            fetchedMessages.push({ ...messageData, id: doc.id });
-
-            // Update latest message only if it's newer
-            if (!latestMessage || messageData.createdAt.toDate() > latestMessage.createdAt.toDate()) {
-              latestMessage = messageData;
-            }
-
-            if (messageData.uid !== auth.currentUser.uid && !messageData.read) {
-              setUnreadMessages((prev) => ({
-                ...prev,
-                [selectedClientId]: true,
-              }));
-            }
-          });
-
-          // Update latest message state
-          if (latestMessage) {
-            setLatestMessages((prev) => ({
-              ...prev,
-              [selectedClientId]: latestMessage,
-            }));
-          }
-
-          setMessages(fetchedMessages);
-
-          if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          }
-
+          const fetchedMessages = querySnapshot.docs.map((doc) => ({
+            ...doc.data(),
+            id: doc.id,
+          }));
+          setMessages((prevMessages) => [...prevMessages, ...fetchedMessages]);
           markMessagesAsRead(selectedClientId);
         });
       } else {
