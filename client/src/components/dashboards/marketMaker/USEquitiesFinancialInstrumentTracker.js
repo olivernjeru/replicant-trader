@@ -6,7 +6,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import { Container, CircularProgress, Box } from '@mui/material';
+import { Container, CircularProgress } from '@mui/material';
 import { restClient } from '@polygon.io/client-js';
 import { useState, useEffect, useRef } from 'react';
 
@@ -28,8 +28,6 @@ export default function USEquitiesFinancialInstrumentTracker() {
   const [prices, setPrices] = useState({}); // State for all fetched prices
   const [afterHoursPrices, setAfterHoursPrices] = useState({}); // State for after-hours prices
   const [volumes, setVolumes] = useState({}); // State for volumes
-  const [startDate, setStartDate] = useState(''); // State for start date
-  const [endDate, setEndDate] = useState(''); // State for end date
   const [isLoading, setIsLoading] = useState(true); // State for loading indicator
   const [error, setError] = useState(null); // State for error message
   const retryTimeoutRef = useRef(null); // Reference to store the retry timeout
@@ -43,11 +41,21 @@ export default function USEquitiesFinancialInstrumentTracker() {
 
     try {
       const today = new Date();
-      const endDate = today.toISOString().split('T')[0];
-      const startDate = new Date(today.getTime() - (1 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+      const day = today.getUTCDay();
+      let fetchDate;
 
-      setStartDate(startDate);
-      setEndDate(endDate);
+      if (day === 0) { // Sunday
+        fetchDate = new Date(today.getTime() - (2 * 24 * 60 * 60 * 1000)); // Set fetch date to Friday
+      } else if (day === 1) { // Monday
+        fetchDate = new Date(today.getTime() - (3 * 24 * 60 * 60 * 1000)); // Set fetch date to Friday
+      } else if (day === 6) { // Saturday
+        fetchDate = new Date(today.getTime() - (1 * 24 * 60 * 60 * 1000)); // Set fetch date to Friday
+      } else {
+        fetchDate = new Date(today.getTime() - (1 * 24 * 60 * 60 * 1000)); // Set fetch date to Friday
+      }
+
+      const endDate = fetchDate.toISOString().split('T')[0];
+      const startDate = endDate;
 
       const allPromises = tickers.map((ticker) =>
         rest.stocks.dailyOpenClose(ticker, startDate)
@@ -87,13 +95,12 @@ export default function USEquitiesFinancialInstrumentTracker() {
     }
   };
 
-  // Call fetchData on component mount
   useEffect(() => {
-    // Check if data exists in local storage
     const cachedPrices = localStorage.getItem('fitPrices');
     const cachedAfterHoursPrices = localStorage.getItem('fitAfterHoursPrices');
     const cachedVolumes = localStorage.getItem('fitVolumes');
-    if (cachedPrices && cachedAfterHoursPrices) {
+
+    if (cachedPrices && cachedAfterHoursPrices && cachedVolumes) {
       setPrices(JSON.parse(cachedPrices));
       setAfterHoursPrices(JSON.parse(cachedAfterHoursPrices));
       setVolumes(JSON.parse(cachedVolumes));
@@ -110,9 +117,9 @@ export default function USEquitiesFinancialInstrumentTracker() {
   }, []);
 
   return (
-    <Container sx={{width: '50%', ml: '-2%'}}>
+    <Container sx={{ width: '50%', ml: '-2%' }}>
       {isLoading ? (
-          <CircularProgress sx={{ml:30, mt:10}} />
+        <CircularProgress sx={{ ml: 30, mt: 10 }} />
       ) : (
         <TableContainer component={Paper}>
           <Table size="small" aria-label="a dense table">
