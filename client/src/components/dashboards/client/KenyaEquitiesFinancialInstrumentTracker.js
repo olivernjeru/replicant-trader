@@ -13,8 +13,8 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
     const [data, setData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isSorted, setIsSorted] = useState(false); // State variable to track sorting
-    const [retryTimeout, setRetryTimeout] = useState(null); // State variable to store retry timeout
+    const [isSorted, setIsSorted] = useState(false);
+    const [retryTimeout, setRetryTimeout] = useState(null);
 
     const url = 'https://nairobi-stock-exchange-nse.p.rapidapi.com/stocks';
     const options = {
@@ -30,15 +30,27 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
             const response = await fetch(url, options);
             const result = await response.json();
             setData(result);
-            localStorage.setItem('nseData', JSON.stringify(result)); // Store data in local storage
+            localStorage.setItem('nseData', JSON.stringify(result));
             setIsLoading(false);
-            setIsSorted(false); // Reset sorting state
+            setIsSorted(false);
         } catch (error) {
             setError('An error occurred while fetching data. Retrying...');
             setIsLoading(true);
-            // Retry after 15 seconds
-            setRetryTimeout(setTimeout(fetchData, 15000));
+            setRetryTimeout(setTimeout(fetchData, 60000)); // Retry after 1 minute
         }
+    };
+
+    const isMarketOpen = () => {
+        const now = new Date();
+        const day = now.getDay(); // 0 (Sunday) to 6 (Saturday)
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const openTime = new Date();
+        openTime.setHours(9, 15, 0, 0); // 9:15 AM EAT
+        const closeTime = new Date();
+        closeTime.setHours(15, 30, 0, 0); // 3:30 PM EAT
+        const isWeekday = day >= 1 && day <= 5; // Monday to Friday
+        return isWeekday && now >= openTime && now <= closeTime;
     };
 
     useEffect(() => {
@@ -50,14 +62,15 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
             fetchData();
         }
 
-        const timeout = setTimeout(() => {
-            fetchData();
+        if (isMarketOpen()) {
+            fetchData(); // Fetch immediately if the market is open
             const interval = setInterval(fetchData, 60000); // Fetch data every minute
             return () => clearInterval(interval);
-        }, 15000);
+        } else {
+            fetchData(); // Fetch once if the market is closed
+        }
 
         return () => {
-            clearTimeout(timeout);
             if (retryTimeout) {
                 clearTimeout(retryTimeout);
             }
@@ -65,16 +78,14 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
     }, []);
 
     useEffect(() => {
-        if (!isSorted && data.length > 0) { // Check if data has been fetched and not sorted yet
-            // Sort the data by volume in descending order
+        if (!isSorted && data.length > 0) {
             const sortedData = [...data].sort((a, b) => {
-                // Parse volume strings to numbers for comparison
                 const volumeA = parseInt(a.volume.replace(/,/g, '') || '0', 10);
                 const volumeB = parseInt(b.volume.replace(/,/g, '') || '0', 10);
                 return volumeB - volumeA;
             });
-            setData(sortedData); // Update the state with the sorted data
-            setIsSorted(true); // Update state to indicate sorting has been done
+            setData(sortedData);
+            setIsSorted(true);
         }
     }, [data, isSorted]);
 
