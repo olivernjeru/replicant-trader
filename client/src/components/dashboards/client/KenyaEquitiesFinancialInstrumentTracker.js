@@ -27,33 +27,37 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
 
     const fetchData = async () => {
         try {
-            // Check if data exists in local storage
-            const cachedData = localStorage.getItem('nseData');
-            if (cachedData) {
-                setData(JSON.parse(cachedData));
-                setIsLoading(false);
-            } else {
-                const response = await fetch(url, options);
-                const result = await response.json();
-                setData(result);
-                // Store data in local storage
-                localStorage.setItem('nseData', JSON.stringify(result));
-                setIsLoading(false);
-            }
+            const response = await fetch(url, options);
+            const result = await response.json();
+            setData(result);
+            localStorage.setItem('nseData', JSON.stringify(result)); // Store data in local storage
+            setIsLoading(false);
+            setIsSorted(false); // Reset sorting state
         } catch (error) {
             setError('An error occurred while fetching data. Retrying...');
             setIsLoading(true);
-
-            // Retry after 1 minute
-            const retryTimeout = setTimeout(fetchData, 60000); // 1 Minute
-            setRetryTimeout(retryTimeout);
+            // Retry after 15 seconds
+            setRetryTimeout(setTimeout(fetchData, 15000));
         }
     };
 
     useEffect(() => {
-        fetchData();
+        const cachedData = localStorage.getItem('nseData');
+        if (cachedData) {
+            setData(JSON.parse(cachedData));
+            setIsLoading(false);
+        } else {
+            fetchData();
+        }
+
+        const timeout = setTimeout(() => {
+            fetchData();
+            const interval = setInterval(fetchData, 60000); // Fetch data every minute
+            return () => clearInterval(interval);
+        }, 15000);
 
         return () => {
+            clearTimeout(timeout);
             if (retryTimeout) {
                 clearTimeout(retryTimeout);
             }
