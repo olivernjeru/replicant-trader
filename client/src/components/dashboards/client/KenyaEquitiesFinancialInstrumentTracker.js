@@ -20,7 +20,7 @@ export default function KenyaEquitiesFinancialInstrumentTracker() {
     const options = {
         method: 'GET',
         headers: {
-            'X-RapidAPI-Key': process.env.REACT_APP_RAPIDAPI_NSE_MM_KEY,
+            'X-RapidAPI-Key': process.env.REACT_APP_RAPIDAPI_NSE_CLIENT_KEY,
             'X-RapidAPI-Host': 'nairobi-stock-exchange-nse.p.rapidapi.com'
         }
     };
